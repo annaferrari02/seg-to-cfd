@@ -1,0 +1,5 @@
+#tutti i parametri (scaling factor, quality check gate, GMES....) 
+
+ #PARAVIEW 
+ scale: 0.1 #da mm a cm 
+ recenter: True 

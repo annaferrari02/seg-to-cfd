@@ -1,0 +1,16 @@
+{
+  "schema_version": 1,
+  "patient_id": "pz000",
+  "stage": "paraview",
+  "status": "pending",
+  "updated_at": "2026-08-04T10:05:56+00:00",
+  "artifacts": {},
+  "history": [
+    {
+      "stage": "ingest",
+      "status": "done",
+      "at": "2026-08-04T10:05:56+00:00",
+      "message": "pz inizializzato"
+    }
+  ]
+}

@@ -1,0 +1,4 @@
+#path a tutti gli "esecutori", softwares (quindi pvbatch, simvascular, svmultiphysics etc)
+
+#paraview 
+pvpython: "C:/Program Files/ParaView 5.13.0/bin/pvpython.exe"

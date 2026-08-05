@@ -1,0 +1,8 @@
+#folders
+.venv/
+.database/
+.src/cfdpipe/__pycache__/
+.src/cfdpipe/cfdpipe.egg-info/
+
+#files
+.config/paths.yaml

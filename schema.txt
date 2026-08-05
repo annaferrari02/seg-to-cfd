@@ -1,0 +1,105 @@
+passo1: da output di CIS-UNet a lumen_tree_cfd_cap.vtk (3D Slicer)
+        da file .nrrd a vtk ? 
+        3Dslicer documentation: https://slicer.readthedocs.io/en/latest/index.html
+        1.	Creo la mesh congiunta di: lumen, located celiac, located sma, located internal iliac right, located internal iliac left, located renal right, located renal left. 
+        2. Faccio uno smooth sul lumen (prima closing 2mm e poi opening 2mm, comunque 3x3x3). Faccio anche un gaussiano?
+           Per farlo uso Segment Editor e Logical operators (NB forse meglio usare Overwrite all?).
+        3. La riordino tagliando i segmenti attorno ai 2 cm e ripulendoli. Poi con “Segment Editor” tolgo le calcificazioni. Salvo la nuova segmentazione come lumen_ok. Faccio uno smooth sul lumen_ok (prima closing 2mm e poi opening 2mm).
+        4. Dal modulo "data-vascular model toolkit" utilizzo “extract centerline”. Creo una nuova lista di Endopoint (posizionati bene il più possibili ortogonali). 
+        5. Creo un nuovo Tree, e lo chiamo “lumen_tree”. 
+        6. Poi utilizzo “clip vessel” (flaggo “cap output surface” e “add flow extension” e faccio extension di 25?) e in output creo un nuovo modello “lumen_tree_cfd_cap”)
+
+
+passo2: da lumen_tree_cfd_cap.vtk --> lumen_tree_cfd_clip_cm.vtk (PARAVIEW) --> funzionante 
+Paraview documentation --> https://docs.paraview.org/en/v5.10.1/index.html
+        1.	In Paraview carico la mesh, la seleziono e in “Properties” faccio “Apply”. 
+        2. In “Filtrers” -> “Trasform” applico “Scale” di 0.1 per convertire da mm in cm (posso controllare se è già in cm da Information -> Bounds). Per ricentrare sulla mesh usare: 
+        3. Poi “Filtrers” -> “Triangulate”
+        4. Poi “Filters” -> “Clean” (no clean to grid) 
+        6. Salvo vtk (es lumen_tree_cfd_clip_cm)
+
+
+passo3: da lumen_tree_cfd_clip_cm.vtk --> SV folder 
+        1. creo nuovo SV project (nome: pz***)
+        2. importo lumen_tree_cfd_clip_cm.vtk come modello in "Model"
+        3. uso separation angle 50 per identificazione delle faces
+        4. combino tutte le faces della parete dell'aorta, rinomino "wall" e inserisco type "wall"
+        5. tutte le altre sono di consgeuenza type "CAP" 
+        6. remesh 
+        7. salva 
+        8. passando a "SV meshing" e predispongo: 
+                a. Global Max Edge Size : 0.25 
+                b. applico boundary layer meshing 
+                c. portion edge size imposto come valore iniziale 0.5, decresce se il meshing fallisce 
+        9. salvo e poi runno il mesher 
+        10.salvo tutto il folder 
+
+passo4: mesh quality check <400 (in Paraview)
+        1. carico file pz***.vtp in paraview e applico filter quality 
+        2. se mesh quality <400 --> errore else--> procedi 
+        3. trovare modelfaceID di wall(di solito 1) e inlet (soprattutto)
+
+
+passo5: SV folder --> lancio simulazioni --> recuperare script da VM 
+        1. creare CFD simulation job nominato "pz***"
+        2. generare i parametri delle sim: (GUARDARE IN SETUP BCS)
+           python3 setup_bcs.py pz***/Models/pz***.vtp pz***/rcrparams.txt 119989.8
+           0.00 097508288 "inletID" "wallID" ModelFaceID 1. 0.15
+        3. Inserire BC 
+                inlet: inflow_reference_scaled
+                altre bc: output di setup_bcs.py da inserire automaticamente 
+        4. "solver parameters" -> 
+                a. Number of timesteps: 960
+                b. “increment in saving vtk files” deve diventare 2
+        5. create files 
+        5. run nohup /usr/bin/mpiexec -n 16 /usr/local/sv/svMultiPhysics/2025-06-
+        20/bin/svmultiphysics solver.xml &gt; log_16 &amp; disown
+
+
+seg-to-cfd/
+├── README.md
+├── pyproject.toml
+├── .gitignore                  # esclude datalake/, logs/, *.vtk, *.vtp
+│
+├── config/
+│   ├── pipeline.yaml           # sequenza stadi + tipo (auto/human/gate/async)
+│   ├── params.yaml             # tutti i "numeri magici" (scale, edge, soglia 400, timesteps…)
+│   └── paths.yaml              # path binari: pvbatch, simvascular, svmultiphysics, mpiexec
+│
+├── src/cfdpipe/                # ← MONDO 1: l'orchestratore (tuo Python)
+│   ├── cli.py                  # comandi umani: run, status, approve, sims
+│   ├── config.py               # carica gli yaml
+│   ├── ledger.py               # legge/scrive status.json + enum degli stati
+│   ├── patient.py              # astrazione su una cartella pz***
+│   ├── stages.py               # registro stadi, StageType, ordine, precondizioni
+│   ├── orchestrator.py         # scandisce il datalake, avanza ogni pz
+│   ├── review.py               # gate umano: coda in attesa, approva/rifiuta
+│   ├── simqueue.py             # coda sim: concorrenza, polling, stallo
+│   ├── notify.py               # logging + alert su fail/stallo
+│   └── adapters/
+│       ├── base.py             # interfaccia Adapter (preconditions/run/validate)
+│       ├── paraview.py         # passo 2 + quality check passo 4
+│       ├── simvascular.py      # passo 3 (faces, mesh) + passo 5 (setup BC)
+│       └── slicer.py           # passo 1 (slot futuro)
+│
+├── sw_scripts/                 # ← MONDO 2: girano DENTRO ogni software
+│   ├── paraview/
+│   │   ├── transform_clean.py  # pvbatch: scale 0.1, triangulate, clean
+│   │   └── mesh_quality.py     # pvbatch: quality filter → valore max
+│   ├── simvascular/
+│   │   ├── build_faces.py      # sv: import vtk, sep angle 50, faces, preview
+│   │   ├── mesh_model.py       # sv: tetgen + boundary layer, retry
+│   │   └── setup_sim.py        # sv: BC + solver params + create files
+│   └── slicer/                 # futuro passo 1
+│
+├── templates/
+│   ├── solver.xml.j2           # template svMultiPhysics
+│   ├── inflow_reference_scaled.flow
+│   └── setup_bcs.py            # lo script recuperato dalla VM
+│
+├── scripts/
+│   └── run_sim.sh              # wrapper: nohup mpiexec -n 16 … > log_16 &
+│
+└── tests/
+    ├── test_ledger.py
+    └── test_stages.py

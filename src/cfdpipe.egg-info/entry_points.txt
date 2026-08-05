@@ -1,0 +1,2 @@
+[console_scripts]
+cfdpipe = cfdpipe.cli:main
