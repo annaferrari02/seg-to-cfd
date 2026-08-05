@@ -1,16 +1,42 @@
 {
   "schema_version": 1,
   "patient_id": "pz000",
-  "stage": "paraview",
-  "status": "pending",
-  "updated_at": "2026-08-04T10:05:56+00:00",
-  "artifacts": {},
+  "stage": "sv_faces",
+  "status": "awaiting_human",
+  "updated_at": "2026-08-05T12:49:46+00:00",
+  "artifacts": {
+    "clip_cm": "database\\pz000\\lumen_tree_cfd_clip_cm.vtk"
+  },
   "history": [
     {
       "stage": "ingest",
       "status": "done",
       "at": "2026-08-04T10:05:56+00:00",
       "message": "pz inizializzato"
+    },
+    {
+      "stage": "paraview",
+      "status": "running",
+      "at": "2026-08-05T12:49:43+00:00",
+      "message": "avvio"
+    },
+    {
+      "stage": "paraview",
+      "status": "done",
+      "at": "2026-08-05T12:49:46+00:00",
+      "message": "completato e validato"
+    },
+    {
+      "stage": "sv_faces",
+      "status": "pending",
+      "at": "2026-08-05T12:49:46+00:00",
+      "message": "avanzo da paraview"
+    },
+    {
+      "stage": "sv_faces",
+      "status": "awaiting_human",
+      "at": "2026-08-05T12:49:46+00:00",
+      "message": "in attesa di revisione umana"
     }
   ]
 }

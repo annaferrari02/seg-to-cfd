@@ -15,9 +15,22 @@ def build_adapters(paths: dict, params: dict) -> dict[str, Adapter]:
     """stage-name -> adapter, con config iniettata dall'esterno."""
     return {
         "paraview": ParaViewAdapter(
+            stage="paraview",
             pvpython=paths["pvpython"],
             script=STEPS_DIR / "paraview" / "transform_mesh.py",
-            scale=params.get("scale", 0.1),
+            input_filename="lumen_tree_cfd_cap.vtk",
+            output_filename="lumen_tree_cfd_clip_cm.vtk",
+            output_artifact_name="clip_cm",
+            extra_args=["--scale", str(params.get("scale", 0.1))],
+        ),
+        "mesh_qc": ParaViewAdapter(
+            stage="mesh_qc",
+            pvpython=paths["pvpython"],
+            script=STEPS_DIR / "paraview" / "quality_check.py",
+            input_filename="{patient}.vtp",
+            output_filename="{patient}.vtp",
+            output_artifact_name="mesh_qc",
+            extra_args=["--threshold", str(params.get("quality_threshold", 400))],
         ),
         # "sv_mesh": ...,  # arriveranno gli altri
     }

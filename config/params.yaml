@@ -3,3 +3,4 @@
  #PARAVIEW 
  scale: 0.1 #da mm a cm 
  recenter: True 
+ quality_threshold: 400 

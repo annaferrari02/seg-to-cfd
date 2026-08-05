@@ -1,4 +1,4 @@
-"""Adapter per il passo ParaView (MONDO 1).
+"""Adapter per il passo ParaView.
 
 Non conosce vtk: lancia pvpython su steps/2_paraview.py e comunica via file.
 Implementa il contratto base.Adapter.
@@ -12,43 +12,59 @@ from pathlib import Path
 from .base import Adapter
 from ..patient import Patient
 
-OUTPUT_FILENAME = "lumen_tree_cfd_clip_cm.vtk"
-
 
 class ParaViewAdapter(Adapter):
-    stage = "paraview"
+    """Adapter generico per uno script ParaView che legge e scrive un file."""
 
-    def __init__(self, pvpython: str, script: Path, scale: float) -> None:
+    def __init__(
+        self,
+        stage: str,
+        pvpython: str,
+        script: Path,
+        input_filename: str,
+        output_filename: str,
+        output_artifact_name: str,
+        extra_args: list[str] | None = None,
+    ) -> None:
+        self.stage = stage
         self.pvpython = pvpython
         self.script = Path(script)
-        self.scale = scale
+        self.input_filename = input_filename
+        self.output_filename = output_filename
+        self.output_artifact_name = output_artifact_name
+        self.extra_args = extra_args or []
+
+    def _input_path(self, patient: Patient) -> Path:
+        name = self.input_filename.format(patient=patient.id)
+        return patient.root / name
 
     def _output_path(self, patient: Patient) -> Path:
-        return patient.root / OUTPUT_FILENAME
+        name = self.output_filename.format(patient=patient.id)
+        return patient.root / name
 
     def preconditions(self, patient: Patient) -> None:
-        # solo LETTURA: il mondo è pronto adesso? (nessun mkdir qui)
-        if not patient.input_vtk.exists():
-            raise FileNotFoundError(f"{patient.id}: manca l'input {patient.input_vtk}")
+        if not self._input_path(patient).exists():
+            raise FileNotFoundError(
+                f"{patient.id}: manca l'input {self._input_path(patient)}"
+            )
         if not Path(self.pvpython).exists():
-            raise FileNotFoundError(f"pvpython non trovato: {self.pvpython} (vedi paths.yaml)")
+            raise FileNotFoundError(
+                f"pvpython non trovato: {self.pvpython} (vedi paths.yaml)"
+            )
         if not self.script.exists():
-            raise FileNotFoundError(f"script MONDO 2 non trovato: {self.script}")
+            raise FileNotFoundError(f"script non trovato: {self.script}")
 
     def run(self, patient: Patient) -> None:
-        
         output = self._output_path(patient)
-
         cmd = [
             self.pvpython,
             str(self.script),
-            str(patient.input_vtk),
+            str(self._input_path(patient)),
             str(output),
-            "--scale", str(self.scale),
+            *self.extra_args,
         ]
 
         proc = subprocess.run(cmd, capture_output=True, text=True)
-
         if proc.returncode != 0:
             raise RuntimeError(
                 f"{patient.id}: pvpython uscito con codice {proc.returncode}.\n"
@@ -56,10 +72,9 @@ class ParaViewAdapter(Adapter):
             )
 
     def validate(self, patient: Patient) -> dict[str, str]:
-        # legge SOLO dal disco: niente vtk nel MONDO 1
         output = self._output_path(patient)
         if not output.exists():
             raise FileNotFoundError(f"{patient.id}: output non prodotto: {output}")
         if output.stat().st_size == 0:
             raise ValueError(f"{patient.id}: output vuoto: {output}")
-        return {"clip_cm": str(output)}
+        return {self.output_artifact_name: str(output)}
