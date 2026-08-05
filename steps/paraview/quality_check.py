@@ -12,7 +12,7 @@ The script performs a simple quality heuristic (number of points) and
 returns non-zero if the mesh is below threshold. It writes the input
 dataset to `output` so the pipeline can continue using the same path.
 """
-#da controllare se funzia + aggiungere estrazione di model face id dell'INLET e WALL 
+#da controllare se funzia + aggiungere estrazione di model face id dell'INLET e WALL (a meno che non sia gestito direttamente da simvascular)
 from __future__ import annotations
 
 import argparse
