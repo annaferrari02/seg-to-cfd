@@ -1,25 +1,17 @@
-#config/pipeline.yaml
-#gestisce la sequenza degli stadi per ogni pz + il tipo di stadio (auto,interactive,gate,asyncrone)
-schema_version: 1 
-
-stages: 
-- name: paraview #transorm, scale, clean, triangulate 
-  type: auto
-
-- name: sv_faces  #crea SV folder, importa modello e combina segmenti di wall, inserisce type di wall, caps o inlet --> revisione umana?
-  type: interactive
-
-- name: sv_mesh  #remesh, BL, GMES, portion edge size da 0.5 decrescente
-  type: auto
-
-- name: mesh_qc #gate del quality check inferiore a threshold (400?)  + ESTRAZIONE MODELFACE ID 
-  type: gate 
-
-- name: sv_bc #calculate bc w/ setup_bcs.py, insert, change solver params
-  type: auto 
-
-- name: simulation #launch and run sim 
-  type: async 
-
+# Single source of truth for stage ORDER and TYPE (data, not code).
+# Keys per stage:
+#   name    : unique stage id, also the ledger key
+#   type    : auto | human | gate | async
+#   adapter : which adapter in the registry runs it
+#   action  : optional sub-action for multi-purpose adapters
+stages:
+  - {name: slicer,        type: interactive, adapter: slicer}
+  - {name: paraview,      type: auto,  adapter: paraview,    action: transform}
+  - {name: sv_extract,    type: auto,  adapter: simvascular, action: extract}
+  - {name: tag_endpoints, type: auto,  adapter: tag}
+  - {name: sv_match,      type: gate,  adapter: sv_match}
+  - {name: sv_apply,      type: auto,  adapter: simvascular, action: apply}
+  - {name: mesh_quality,  type: gate,  adapter: paraview,    action: quality}
+  - {name: simulation,    type: async, adapter: simvascular, action: simulate}
 
 

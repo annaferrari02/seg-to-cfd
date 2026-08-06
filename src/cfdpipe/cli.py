@@ -73,6 +73,12 @@ def cmd_run(args) -> None:
     except (ConfigError, KeyError) as e:
         raise SystemExit(f"[run] configurazione: {e}")
 
+    print(f"[DEBUG] pipeline stages: {pipeline.stage_names()}")
+    print(f"[DEBUG] adapters registered: {list(adapters.keys())}")
+    print(f"[DEBUG] running on database root: {_database_root()}")
+    if args.patient:
+        print(f"[DEBUG] limiting run to patient: {args.patient}")
+
     runs = orchestrator.run(_database_root(), pipeline, adapters, only=args.patient)
     if not runs:
         print("nessun paziente da elaborare")

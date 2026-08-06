@@ -2,5 +2,7 @@
 
 #paraview 
 pvpython: "C:/Program Files/ParaView 5.13.0/bin/pvpython.exe"
+#3dslicer
 
+slicer: "C:/3D Slicer 5.10.0/Slicer.exe"
 simvascular: "C:/Program Files/SimVascular/SimVascular/2023-03-27/sv.bat"

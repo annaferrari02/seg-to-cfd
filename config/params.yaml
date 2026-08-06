@@ -1,6 +1,29 @@
-#tutti i parametri (scaling factor, quality check gate, GMES....) 
+# Tunable parameters. Loaded at the command boundary (cli) and passed down.
+# Geometry / transform (the ONE Slicer->SV transform lives in sv_match_core)
+scale: 0.1
+sv_frame: LPS               # frame SimVascular geometry is in
+flow_ext_length: 25.0     # <-- your tunable knob: Slicer clip-vessel flow extension
+match_tol_cm: 0.5           # tolerance added to expected extension in sv_match.validate
+ambiguity_margin_cm: 0.2    # below this, a cap<->endpoint assignment is flagged for a human
+radius_array: Radius        # point-data array name in the centerline .vtk
+max_snap_dist_mm: 5.0       # tag_endpoints frame-mismatch guard
 
- #PARAVIEW 
- scale: 0.1 #da mm a cm 
- recenter: True 
- quality_threshold: 400 
+# SimVascular / meshing
+separation_angle: 50
+global_max_edge_size: 0.25
+max_quality: 400            # mesh_quality gate: fail if >= this
+max_geom_cm: 100            # paraview transform guard: fail if extent exceeds (mm not scaled)
+
+# Simulation
+mpi_ranks: 16
+
+# Where the World-2 scripts live
+sw_scripts_dir: /home/claude/seg-to-cfd/sw_scripts
+
+# How to launch each World-2 tool. Empty -> default to the current python (for stubs).
+# Production forms (fill on the workstation):
+#   slicer:        ["Slicer", "--python-script"]        # note: needs "--" before script args
+#   pvbatch:       ["pvbatch"]
+#   simvascular:   ["simvascular", "--python"]
+#   svmultiphysics:["nohup", "/usr/local/sv/.../bin/svmultiphysics"]
+launcher: {}

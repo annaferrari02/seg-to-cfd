@@ -4,6 +4,7 @@ from pathlib import Path
 
 from .base import Adapter
 from .paraview import ParaViewAdapter
+from .slicer import SlicerInteractiveAdapter
 
 # repo_root/steps  (stessa "risalita" che fa cli.py per config/)
 STEPS_DIR = Path(__file__).resolve().parents[3] / "steps"
@@ -32,5 +33,10 @@ def build_adapters(paths: dict, params: dict) -> dict[str, Adapter]:
             output_artifact_name="mesh_qc",
             extra_args=["--threshold", str(params.get("quality_threshold", 400))],
         ),
-        # "sv_mesh": ...,  # arriveranno gli altri
-    }
+        "slicer": SlicerInteractiveAdapter(
+            stage="slicer",
+            slicer_bin=paths.get("slicer", "Slicer"),
+            script=STEPS_DIR / "slicer" / "extract_tree_and_extensions.py",
+            extensions_length=params.get("extensions_length", 25.0)
+        )
+            }

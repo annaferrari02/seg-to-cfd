@@ -20,13 +20,17 @@ from .ledger import (
 from .stages import Pipeline 
 # La sequenza completa vivra' in stages.py / pipeline.yaml (prossimo passo).
 
-INPUT_FILENAME = "lumen_tree_cfd_cap.vtk"
+INPUT_FILENAME = "lumen_tree_cfd.vtk"
 
 
 class Patient:
     def __init__(self, root: Path):
         self.root = Path(root)
         self.id = self.root.name
+
+    @property
+    def path(self) -> Path:
+        return self.root
 
     # percorsi dentro la cartella di un pz
     @property

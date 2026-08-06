@@ -1,0 +1,157 @@
+  Error(s):
+    CLI executable: C:/3D Slicer 5.10.0/slicer.org/Extensions-34045/SlicerVMTK/lib/Slicer-5.10/qt-loadable-modules/vtkvmtk.py
+    The process failed to start. Either the invoked program is missing, or you may have insufficient permissions to invoke the program.
+Fail to instantiate module  "vtkvmtk"
+The following modules failed to be instantiated:
+   vtkvmtk
+Switch to module:  "Welcome"
+[DEBUG] Slicer script argv: ['C:/Users/998281/Desktop/Anna/seg-to-cfd/steps/slicer/extract_tree_and_extensions.py', '--patient-dir', 'C:\\Users\\998281\\Desktop\\Anna\\seg-to-cfd\\database\\pz000', '--flow-ext', '25.0']
+[DEBUG] Slicer parsed args: ['--patient-dir', 'C:\\Users\\998281\\Desktop\\Anna\\seg-to-cfd\\database\\pz000', '--flow-ext', '25.0']
+[pz000] patient_dir resolved to: C:\Users\998281\Desktop\Anna\seg-to-cfd\database\pz000
+[pz000] input VTK resolved to: C:\Users\998281\Desktop\Anna\seg-to-cfd\database\pz000\lumen_tree_cfd.vtk
+[pz000] Caricamento modello superficie: C:\Users\998281\Desktop\Anna\seg-to-cfd\database\pz000\lumen_tree_cfd.vtk
+[pz000] Esiste il file? True
+"Model" Reader has successfully read the file "C:\\Users\\998281\\Desktop\\Anna\\seg-to-cfd\\database\\pz000\\lumen_tree_cfd.vtk" "[0.02s]"
+[pz000] Estrazione automatica degli endpoints...
+Switch to module:  "ExtractCenterline"
+
+============================================================
+ INTERVENTO RICHIESTO: Correggi la posizione degli endpoints nella GUI.
+ Una volta terminato, clicca sul pulsante 'CONFERMA E CHIUDI GUI' nella barra in alto.
+============================================================
+
+Found CommandLine Module, target is C:/3D Slicer 5.10.0/bin/../lib/Slicer-5.10/cli-modules/Decimation.exe
+
+
+ModuleType: CommandLineModule
+
+
+Decimation command line: 
+
+C:/3D Slicer 5.10.0/bin/../lib/Slicer-5.10/cli-modules/Decimation.exe --reductionFactor 0.88434 --method FastQuadric --deleteBoundary --aggressiveness 4 C:/Users/998281/AppData/Local/Temp/Slicer/DBICA_vtkMRMLModelNodeF.obj C:/Users/998281/AppData/Local/Temp/Slicer/DBICA_vtkMRMLModelNodeG.obj 
+
+
+Decimation standard output:
+
+Input: 43230 vertices,86412 triangles (target 9994)
+Output: 6453 vertices,12898 triangles (0.850738 reduction)
+
+
+
+Decimation completed without errors
+
+
+Warning: In vtkMRMLModelStorageNode.cxx, line 453
+vtkMRMLModelStorageNode (00000264DBD383D0): ReadDataInternal (vtkMRMLModelStorageNode2): File C:/Users/998281/AppData/Local/Temp/Slicer/DBICA_vtkMRMLModelNodeG.obj does not contain coordinate system information. Using LPS.
+
+
+Found CommandLine Module, target is C:/3D Slicer 5.10.0/bin/../lib/Slicer-5.10/cli-modules/Decimation.exe
+
+
+ModuleType: CommandLineModule
+
+
+Decimation command line: 
+
+C:/3D Slicer 5.10.0/bin/../lib/Slicer-5.10/cli-modules/Decimation.exe --reductionFactor 0.88434 --method FastQuadric --deleteBoundary --aggressiveness 4 C:/Users/998281/AppData/Local/Temp/Slicer/DBICA_vtkMRMLModelNodeH.obj C:/Users/998281/AppData/Local/Temp/Slicer/DBICA_vtkMRMLModelNodeI.obj 
+
+
+Decimation standard output:
+
+Input: 43230 vertices,86412 triangles (target 9994)
+Output: 6453 vertices,12898 triangles (0.850738 reduction)
+
+
+
+Decimation completed without errors
+
+
+Warning: In vtkMRMLModelStorageNode.cxx, line 453
+vtkMRMLModelStorageNode (00000264DCB55A40): ReadDataInternal (vtkMRMLModelStorageNode3): File C:/Users/998281/AppData/Local/Temp/Slicer/DBICA_vtkMRMLModelNodeI.obj does not contain coordinate system information. Using LPS.
+
+
+Error: can't reconstruct new profile.
+
+
+Found CommandLine Module, target is C:/3D Slicer 5.10.0/bin/../lib/Slicer-5.10/cli-modules/Decimation.exe
+
+
+ModuleType: CommandLineModule
+
+
+Decimation command line: 
+
+C:/3D Slicer 5.10.0/bin/../lib/Slicer-5.10/cli-modules/Decimation.exe --reductionFactor 0.88434 --method FastQuadric --deleteBoundary --aggressiveness 4 C:/Users/998281/AppData/Local/Temp/Slicer/DBICA_vtkMRMLModelNodeJ.obj C:/Users/998281/AppData/Local/Temp/Slicer/DBICA_vtkMRMLModelNodeBA.obj 
+
+
+Decimation standard output:
+
+Input: 43230 vertices,86412 triangles (target 9994)
+Output: 6453 vertices,12898 triangles (0.850738 reduction)
+
+
+
+Decimation completed without errors
+
+
+Warning: In vtkMRMLModelStorageNode.cxx, line 453
+vtkMRMLModelStorageNode (00000264E4CC3B50): ReadDataInternal (vtkMRMLModelStorageNode4): File C:/Users/998281/AppData/Local/Temp/Slicer/DBICA_vtkMRMLModelNodeBA.obj does not contain coordinate system information. Using LPS.
+
+
+[pz000] Endpoints salvati in: C:\Users\998281\Desktop\Anna\seg-to-cfd\database\pz000\Endpoints_pz000.mrk.json
+[pz000] Calcolo Centerlines e applicazione Flow Extensions (25.0 mm)...
+[pz000] Usando ExtractCenterlineLogic.preprocess
+Found CommandLine Module, target is C:/3D Slicer 5.10.0/bin/../lib/Slicer-5.10/cli-modules/Decimation.exe
+
+
+ModuleType: CommandLineModule
+
+
+Decimation command line: 
+
+C:/3D Slicer 5.10.0/bin/../lib/Slicer-5.10/cli-modules/Decimation.exe --reductionFactor 0.88434 --method FastQuadric --deleteBoundary --aggressiveness 4 C:/Users/998281/AppData/Local/Temp/Slicer/DBICA_vtkMRMLModelNodeBC.obj C:/Users/998281/AppData/Local/Temp/Slicer/DBICA_vtkMRMLModelNodeBD.obj 
+
+
+Decimation standard output:
+
+Input: 43230 vertices,86412 triangles (target 9994)
+Output: 6453 vertices,12898 triangles (0.850738 reduction)
+
+
+
+Decimation completed without errors
+
+
+Warning: In vtkMRMLModelStorageNode.cxx, line 453
+vtkMRMLModelStorageNode (00000264E4CC2FC0): ReadDataInternal (vtkMRMLModelStorageNode5): File C:/Users/998281/AppData/Local/Temp/Slicer/DBICA_vtkMRMLModelNodeBD.obj does not contain coordinate system information. Using LPS.
+
+
+[pz000] Usando ExtractCenterlineLogic.extractCenterline
+Generic Warning: In vtkMath.cxx, line 570
+Unable to factor linear system
+
+
+Generic Warning: In vtkMath.cxx, line 570
+Unable to factor linear system
+
+
+Generic Warning: In vtkMath.cxx, line 570
+Unable to factor linear system
+
+
+[pz000] Coordinate system inferred from input VTK: RAS
+[pz000] Modello finale salvato in: C:\Users\998281\Desktop\Anna\seg-to-cfd\database\pz000\tree_model_pz000.vtk
+[pz000] Generazione modello cap+flow extension in: C:\Users\998281\Desktop\Anna\seg-to-cfd\database\pz000\lumen_tree_cfd_cap.vtk
+Source array too small, requested tuple at index 12514, but there are only 12513 tuples in the array.
+
+
+Source array too small, requested tuple at index 12514, but there are only 12513 tuples in the array.
+
+
+Can't find adjacent point. Bailing out.
+
+
+[pz000] Modello cap+flow extension salvato in: C:\Users\998281\Desktop\Anna\seg-to-cfd\database\pz000\lumen_tree_cfd_cap.vtk
+Switch to module:  ""
+QMainWindow::saveState(): 'objectName' not set for QDockWidget 0x264e494a7a0 'CFD Pipeline - Revisione Endpoints;
+Switch to module:  ""

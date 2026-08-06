@@ -65,6 +65,7 @@ def _step(patient: Patient, pipeline: Pipeline, adapters: dict[str, Adapter]) ->
     """
     st = patient.load_status()
     stage, status = st.stage, st.status
+    print(f"[DEBUG] _step: patient={patient.id} stage={stage} status={status}")
 
     # 1) Stadio finito -> avanza al successivo.
     #    E' anche il punto di RIPRESA: se un run precedente e' morto tra il
@@ -77,33 +78,57 @@ def _step(patient: Patient, pipeline: Pipeline, adapters: dict[str, Adapter]) ->
         patient.set_stage(nxt, StageStatus.PENDING, message=f"avanzo da {stage}")
         return Step(True, "advanced", f"{stage} -> {nxt}")
 
+    # 1b) Stallo da ultimo tentativo: se era ancora running, riproviamo.
+    if status == StageStatus.RUNNING.value:
+        print(f"[DEBUG] _step: patient={patient.id} stage={stage} status=running -> retry")
+        patient.set_stage(stage, StageStatus.PENDING,
+                          message="stale running: retry")
+        status = StageStatus.PENDING.value
+
+    # 1c) Se lo stadio interattivo è stato lasciato in failed, possiamo provare a recuperarlo.
+    if status == StageStatus.FAILED.value:
+        stype = pipeline.stage_type(stage)
+        if stype is StageType.INTERACTIVE:
+            print(f"[DEBUG] _step: patient={patient.id} stage={stage} status=failed -> attempt recovery")
+            adapter = adapters.get(stage)
+            if adapter is not None:
+                try:
+                    artifacts = adapter.validate(patient)
+                except Exception as exc:
+                    print(f"[DEBUG] _step: recovery failed for patient={patient.id} stage={stage}: {exc}")
+                    patient.set_stage(stage, StageStatus.PENDING,
+                                      message="interactive failed: retry")
+                    status = StageStatus.PENDING.value
+                else:
+                    patient.set_stage(stage, StageStatus.DONE,
+                                      message="recovered interactive stage",
+                                      artifacts=artifacts)
+                    return Step(True, "recovered",
+                                f"{stage}: recovered from failed interactive stage")
+
     # 2) Stati che l'orchestratore NON tocca in questo giro.
-    #    running        = in corso, oppure residuo di un crash (lo lascia a un
-    #                     futuro --retry, non lo riesegue a caso).
     #    failed         = isolato: lasciato fermo, gli altri pz proseguono.
     #    awaiting_human = tocca a una persona (futuro comando 'review').
     if status != StageStatus.PENDING.value:
+        print(f"[DEBUG] _step: skipping patient={patient.id} stage={stage} status={status}")
         return Step(False, "skipped",
                     f"{stage}: {status} (non gestito in questo run)")
 
     # 3) Stadio PENDING: la decisione dipende dal TIPO dello stadio.
     stype = pipeline.stage_type(stage)
 
-    if stype is StageType.INTERACTIVE:
-        # Non lo esegue l'orchestratore: segnala che tocca all'umano.
-        patient.set_stage(stage, StageStatus.AWAITING_HUMAN,
-                          message="in attesa di revisione umana")
-        return Step(False, "await_human", f"{stage}: attende revisione umana")
-
     if stype is StageType.ASYNC:
         # Lavoro lungo (8-10 h): NON gira qui. Andra' alla coda simulazioni
         # (simqueue.py, da costruire). Per ora lo lasciamo pending e lo segnaliamo.
+        print(f"[DEBUG] _step: patient={patient.id} stage={stage} is ASYNC")
         return Step(False, "queued",
                     f"{stage}: async, destinato alla coda (non ancora attiva)")
 
-    # AUTO o GATE: serve un adapter registrato per questo stadio.
+    print(f"[DEBUG] _step: patient={patient.id} stage={stage} type={stype.value}")
+    # AUTO, INTERACTIVE o GATE: serve un adapter registrato per questo stadio.
     adapter = adapters.get(stage)
     if adapter is None:
+        print(f"[DEBUG] _step: no adapter for stage={stage}")
         return Step(False, "skipped",
                     f"{stage}: nessun adapter registrato (da implementare)")
 
@@ -118,10 +143,15 @@ def _execute(patient: Patient, stage: str, adapter: Adapter) -> Step:
     tre fasi solleva, l'eccezione risale a ``_process_patient``, che marca il pz
     'failed'.
     """
+    print(f"[DEBUG] _execute: patient={patient.id} stage={stage} adapter={type(adapter).__name__}")
     adapter.preconditions(patient)                      # puo' sollevare
+    print(f"[DEBUG] _execute: preconditions ok for patient={patient.id} stage={stage}")
     patient.set_stage(stage, StageStatus.RUNNING, message="avvio")
+    print(f"[DEBUG] _execute: set stage RUNNING for patient={patient.id} stage={stage}")
     adapter.run(patient)                                # bloccante (sottoprocesso)
+    print(f"[DEBUG] _execute: run complete for patient={patient.id} stage={stage}")
     artifacts = adapter.validate(patient)               # puo' sollevare
+    print(f"[DEBUG] _execute: validate ok for patient={patient.id} stage={stage}")
     patient.set_stage(stage, StageStatus.DONE,
                       message="completato e validato", artifacts=artifacts)
     return Step(True, "executed", f"{stage}: eseguito")

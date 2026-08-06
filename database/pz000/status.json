@@ -1,42 +1,93 @@
 {
   "schema_version": 1,
   "patient_id": "pz000",
-  "stage": "sv_faces",
-  "status": "awaiting_human",
-  "updated_at": "2026-08-05T12:49:46+00:00",
+  "stage": "sv_extract",
+  "status": "pending",
+  "updated_at": "2026-08-06T13:17:32+00:00",
   "artifacts": {
+    "endpoints": "database\\pz000\\Endpoints_pz000.mrk.json",
+    "tree_model": "database\\pz000\\tree_model_pz000.vtk",
+    "cap_model": "database\\pz000\\lumen_tree_cfd_cap.vtk",
     "clip_cm": "database\\pz000\\lumen_tree_cfd_clip_cm.vtk"
   },
   "history": [
     {
       "stage": "ingest",
       "status": "done",
-      "at": "2026-08-04T10:05:56+00:00",
+      "at": "2026-08-06T13:04:59+00:00",
       "message": "pz inizializzato"
+    },
+    {
+      "stage": "slicer",
+      "status": "running",
+      "at": "2026-08-06T13:05:03+00:00",
+      "message": "avvio"
+    },
+    {
+      "stage": "slicer",
+      "status": "pending",
+      "at": "2026-08-06T13:07:18+00:00",
+      "message": "stale running: retry"
+    },
+    {
+      "stage": "slicer",
+      "status": "running",
+      "at": "2026-08-06T13:07:18+00:00",
+      "message": "avvio"
+    },
+    {
+      "stage": "slicer",
+      "status": "pending",
+      "at": "2026-08-06T13:09:23+00:00",
+      "message": "stale running: retry"
+    },
+    {
+      "stage": "slicer",
+      "status": "running",
+      "at": "2026-08-06T13:09:23+00:00",
+      "message": "avvio"
+    },
+    {
+      "stage": "slicer",
+      "status": "pending",
+      "at": "2026-08-06T13:15:35+00:00",
+      "message": "stale running: retry"
+    },
+    {
+      "stage": "slicer",
+      "status": "running",
+      "at": "2026-08-06T13:15:35+00:00",
+      "message": "avvio"
+    },
+    {
+      "stage": "slicer",
+      "status": "done",
+      "at": "2026-08-06T13:17:25+00:00",
+      "message": "completato e validato"
+    },
+    {
+      "stage": "paraview",
+      "status": "pending",
+      "at": "2026-08-06T13:17:25+00:00",
+      "message": "avanzo da slicer"
     },
     {
       "stage": "paraview",
       "status": "running",
-      "at": "2026-08-05T12:49:43+00:00",
+      "at": "2026-08-06T13:17:25+00:00",
       "message": "avvio"
     },
     {
       "stage": "paraview",
       "status": "done",
-      "at": "2026-08-05T12:49:46+00:00",
+      "at": "2026-08-06T13:17:32+00:00",
       "message": "completato e validato"
     },
     {
-      "stage": "sv_faces",
+      "stage": "sv_extract",
       "status": "pending",
-      "at": "2026-08-05T12:49:46+00:00",
+      "at": "2026-08-06T13:17:32+00:00",
       "message": "avanzo da paraview"
-    },
-    {
-      "stage": "sv_faces",
-      "status": "awaiting_human",
-      "at": "2026-08-05T12:49:46+00:00",
-      "message": "in attesa di revisione umana"
     }
   ]
 }
