@@ -6,6 +6,7 @@ from .base import Adapter
 from .paraview import ParaViewAdapter
 from .slicer import SlicerInteractiveAdapter
 
+
 # repo_root/steps  (stessa "risalita" che fa cli.py per config/)
 STEPS_DIR = Path(__file__).resolve().parents[3] / "steps"
 
@@ -14,7 +15,15 @@ __all__ = ["Adapter", "build_adapters"]
 
 def build_adapters(paths: dict, params: dict) -> dict[str, Adapter]:
     """stage-name -> adapter, con config iniettata dall'esterno."""
-    return {
+    # Import adapters that may trigger heavy imports lazily to avoid
+    # circular import problems at package import time.
+    try:
+        from .simvascular import SimVascularAdapter
+    except Exception as e:
+        SimVascularAdapter = None
+        print(f"[DEBUG] build_adapters: could not import SimVascularAdapter: {e}")
+
+    adapters = {
         "paraview": ParaViewAdapter(
             stage="paraview",
             pvpython=paths["pvpython"],
@@ -38,5 +47,20 @@ def build_adapters(paths: dict, params: dict) -> dict[str, Adapter]:
             slicer_bin=paths.get("slicer", "Slicer"),
             script=STEPS_DIR / "slicer" / "extract_tree_and_extensions.py",
             extensions_length=params.get("extensions_length", 25.0)
+        ),
+    }
+
+    if SimVascularAdapter is not None:
+        adapters["sv_extract"] = SimVascularAdapter(
+            stage="sv_extract",
+            simvascular=paths["simvascular"],
+            script=STEPS_DIR / "simvascular" / "extract_faces.py",
+            input_filename="lumen_tree_cfd_clip_cm.vtk",
+            outputs={
+                "sv_model": "model.vtp",       # modello con ModelFaceID
+                "cap_faces": "cap_faces.json",  # consumato da sv_match
+            },
+            extra_args=["--separation-angle", str(params.get("separation_angle", 50))],
         )
-            }
+
+    return adapters

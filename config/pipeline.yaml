@@ -11,7 +11,7 @@ stages:
   - {name: tag_endpoints, type: auto,  adapter: tag}
   - {name: sv_match,      type: gate,  adapter: sv_match}
   - {name: sv_apply,      type: auto,  adapter: simvascular, action: apply}
-  - {name: mesh_quality,  type: gate,  adapter: paraview,    action: quality}
+  - {name: mesh_qc,       type: gate,  adapter: paraview,    action: quality}
   - {name: simulation,    type: async, adapter: simvascular, action: simulate}
 
 

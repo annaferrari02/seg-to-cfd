@@ -9,7 +9,7 @@ passo1: da output di CIS-UNet a lumen_tree_cfd_cap.vtk (3D Slicer)
         5. Creo un nuovo Tree, e lo chiamo “lumen_tree”. 
         6. Poi utilizzo “clip vessel” (flaggo “cap output surface” e “add flow extension” e faccio extension di 25?) e in output creo un nuovo modello “lumen_tree_cfd_cap”)
 
-PASSO1 NEW: da lumen_tree_cfd bisogna estrarre, con slicer 5.10,
+PASSO1 NEW: da lumen_tree_cfd bisogna estrarre, con slicer 5.10, --> VA 
         1. endpoints (Endpoints_pz***.mrk.json) -> automaticamente, ma serve gate umano (extract, controllo gui, extract) 
         2. centerlines 
         3. tree structure (tree_model_pz***.vtk)

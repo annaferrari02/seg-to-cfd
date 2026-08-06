@@ -85,26 +85,26 @@ def _step(patient: Patient, pipeline: Pipeline, adapters: dict[str, Adapter]) ->
                           message="stale running: retry")
         status = StageStatus.PENDING.value
 
-    # 1c) Se lo stadio interattivo è stato lasciato in failed, possiamo provare a recuperarlo.
+    # 1c) Se lo stadio era fallito, proviamo a recuperarlo automaticamente.
     if status == StageStatus.FAILED.value:
         stype = pipeline.stage_type(stage)
-        if stype is StageType.INTERACTIVE:
+        adapter = adapters.get(stage)
+        if adapter is not None:
             print(f"[DEBUG] _step: patient={patient.id} stage={stage} status=failed -> attempt recovery")
-            adapter = adapters.get(stage)
-            if adapter is not None:
-                try:
-                    artifacts = adapter.validate(patient)
-                except Exception as exc:
-                    print(f"[DEBUG] _step: recovery failed for patient={patient.id} stage={stage}: {exc}")
+            try:
+                artifacts = adapter.validate(patient)
+            except Exception as exc:
+                print(f"[DEBUG] _step: recovery failed for patient={patient.id} stage={stage}: {exc}")
+                if stype is not StageType.ASYNC:
                     patient.set_stage(stage, StageStatus.PENDING,
-                                      message="interactive failed: retry")
+                                      message="failed: retry")
                     status = StageStatus.PENDING.value
-                else:
-                    patient.set_stage(stage, StageStatus.DONE,
-                                      message="recovered interactive stage",
-                                      artifacts=artifacts)
-                    return Step(True, "recovered",
-                                f"{stage}: recovered from failed interactive stage")
+            else:
+                patient.set_stage(stage, StageStatus.DONE,
+                                  message="recovered failed stage",
+                                  artifacts=artifacts)
+                return Step(True, "recovered",
+                            f"{stage}: recovered from failed stage")
 
     # 2) Stati che l'orchestratore NON tocca in questo giro.
     #    failed         = isolato: lasciato fermo, gli altri pz proseguono.

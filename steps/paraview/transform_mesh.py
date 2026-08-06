@@ -64,7 +64,8 @@ def main() -> int:
         print("ERRORE: la mesh risultante è vuota.", file=sys.stderr)
         return 1
 
-    SaveData(args.output_file, proxy=cleaned)
+    SaveData(args.output_file, proxy=cleaned, FileType='Ascii')
+    print("SaveData: scritto in formato ASCII", flush=True)
 
     # SaveData può fallire in silenzio: verifico che il file sia davvero uscito
     if not os.path.exists(args.output_file):

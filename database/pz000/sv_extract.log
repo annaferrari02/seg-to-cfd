@@ -1,0 +1,25 @@
+Thu Aug  6 16:47:37 2026 
+0.25 core.mod.core.act WARNING: In us::GetModuleContext at D:\a\SimVascular\SimVascular\BuildWithMake\ext\bin\mitk-2018.04.2\include\mitk\CppMicroServices\core\include\usGetModuleContext.h:57 : Module 'sv4guiModulesvFSI' unknown. The calling module probably misses a US_MODULE_NAME compile definition and/or a call to US_INITIALIZE_MODULE in one of its source files.
+
+Reading SimVascular registry entries.
+
+  Set/Append (PATH) with value (C:\Program Files\SimVascular\SimVascular\2023-03-27;C:\Program Files\SimVascular\SimVascular\2023-03-27\mitk\bin;C:\Program Files\SimVascular\SimVascular\2023-03-27\Python3.5\Scripts)
+  Set/Append (SV_PLUGIN_PATH) with value (C:\Program Files\SimVascular\SimVascular\2023-03-27\mitk\bin\plugins\Release;C:\Program Files\SimVascular\SimVascular\2023-03-27\mitk\bin\Release;C:\Program Files\SimVascular\SimVascular\2023-03-27\plugins)
+  Set/Append (QT_PLUGIN_PATH) with value (C:\Program Files\SimVascular\SimVascular\2023-03-27\qt-plugins)
+  Set/Append (TCLLIBPATH) with value (C:\Program Files\SimVascular\SimVascular\2023-03-27\lib)
+  Set/Append (TCL_LIBRARY) with value (C:\Program Files\SimVascular\SimVascular\2023-03-27\lib\tcl8.6)
+  Set/Append (TK_LIBRARY) with value (C:\Program Files\SimVascular\SimVascular\2023-03-27\lib\tk8.6)
+  Set/Append (PYTHONHOME) with value (C:\Program Files\SimVascular\SimVascular\2023-03-27\Python3.5)
+  Set/Append (PYTHONPATH) with value (C:\Program Files\SimVascular\SimVascular\2023-03-27\Python3.5\Lib;C:\Program Files\SimVascular\SimVascular\2023-03-27\Python3.5\Lib\site-packages;C:\Program Files\SimVascular\SimVascular\2023-03-27)
+Note: No SimVascular plugins found in registry.
+(SOFTWARE\Wow6432Node\SIMVASCULAR\Plugins\2023-03-27)
+
+
+SimVascular Python Shell
+Copyright (c) Stanford University, The Regents of the University
+              of California, and others.  All Rights Reserved.
+
+[DEBUG] extract_faces argv: ['C:\\Users\\998281\\Desktop\\Anna\\seg-to-cfd\\steps\\simvascular\\extract_faces.py', '--input', 'C:\\Users\\998281\\Desktop\\Anna\\seg-to-cfd\\database\\pz000\\lumen_tree_cfd_clip_cm.vtk', '--out-dir', 'C:\\Users\\998281\\Desktop\\Anna\\seg-to-cfd\\database\\pz000', '--separation-angle', '50']
+[DEBUG] extract_faces cwd: C:\Program Files\SimVascular\SimVascular\2023-03-27
+[DEBUG] extract_faces abs input: C:\Users\998281\Desktop\Anna\seg-to-cfd\database\pz000\lumen_tree_cfd_clip_cm.vtk
+[DEBUG] extract_faces abs out-dir: C:\Users\998281\Desktop\Anna\seg-to-cfd\database\pz000
