@@ -3,7 +3,7 @@
   "patient_id": "pz000",
   "stage": "sv_extract",
   "status": "failed",
-  "updated_at": "2026-08-06T14:47:40+00:00",
+  "updated_at": "2026-08-07T08:04:54+00:00",
   "artifacts": {
     "endpoints": "database\\pz000\\Endpoints_pz000.mrk.json",
     "tree_model": "database\\pz000\\tree_model_pz000.vtk",
@@ -14,326 +14,56 @@
     {
       "stage": "ingest",
       "status": "done",
-      "at": "2026-08-06T13:04:59+00:00",
+      "at": "2026-08-07T08:03:12+00:00",
       "message": "pz inizializzato"
     },
     {
       "stage": "slicer",
       "status": "running",
-      "at": "2026-08-06T13:05:03+00:00",
-      "message": "avvio"
-    },
-    {
-      "stage": "slicer",
-      "status": "pending",
-      "at": "2026-08-06T13:07:18+00:00",
-      "message": "stale running: retry"
-    },
-    {
-      "stage": "slicer",
-      "status": "running",
-      "at": "2026-08-06T13:07:18+00:00",
-      "message": "avvio"
-    },
-    {
-      "stage": "slicer",
-      "status": "pending",
-      "at": "2026-08-06T13:09:23+00:00",
-      "message": "stale running: retry"
-    },
-    {
-      "stage": "slicer",
-      "status": "running",
-      "at": "2026-08-06T13:09:23+00:00",
-      "message": "avvio"
-    },
-    {
-      "stage": "slicer",
-      "status": "pending",
-      "at": "2026-08-06T13:15:35+00:00",
-      "message": "stale running: retry"
-    },
-    {
-      "stage": "slicer",
-      "status": "running",
-      "at": "2026-08-06T13:15:35+00:00",
+      "at": "2026-08-07T08:03:13+00:00",
       "message": "avvio"
     },
     {
       "stage": "slicer",
       "status": "done",
-      "at": "2026-08-06T13:17:25+00:00",
+      "at": "2026-08-07T08:04:40+00:00",
       "message": "completato e validato"
     },
     {
       "stage": "paraview",
       "status": "pending",
-      "at": "2026-08-06T13:17:25+00:00",
+      "at": "2026-08-07T08:04:40+00:00",
       "message": "avanzo da slicer"
     },
     {
       "stage": "paraview",
       "status": "running",
-      "at": "2026-08-06T13:17:25+00:00",
+      "at": "2026-08-07T08:04:40+00:00",
       "message": "avvio"
     },
     {
       "stage": "paraview",
       "status": "done",
-      "at": "2026-08-06T13:17:32+00:00",
+      "at": "2026-08-07T08:04:44+00:00",
       "message": "completato e validato"
     },
     {
       "stage": "sv_extract",
       "status": "pending",
-      "at": "2026-08-06T13:17:32+00:00",
+      "at": "2026-08-07T08:04:44+00:00",
       "message": "avanzo da paraview"
     },
     {
       "stage": "sv_extract",
       "status": "running",
-      "at": "2026-08-06T14:00:11+00:00",
+      "at": "2026-08-07T08:04:44+00:00",
       "message": "avvio"
     },
     {
       "stage": "sv_extract",
       "status": "failed",
-      "at": "2026-08-06T14:00:15+00:00",
-      "message": "RuntimeError: pz000: SimVascular uscito con codice 1.\n--- output ---\nThu Aug  6 16:00:15 2026 \n0.77 core.mod.core.act WARNING: In us::GetModuleContext at D:\\a\\SimVascular\\SimVascular\\BuildWithMake\\ext\\bin\\mitk-2018.04.2\\include\\mitk\\CppMicroServices\\core\\include\\usGetModuleContext.h:57 : Module 'sv4guiModulesvFSI' unknown. The calling module probably misses a US_MODULE_NAME compile definition and/or a call to US_INITIALIZE_MODULE in one of its source files.\n\nReading SimVascular registry entries.\n\n  Set/Append (PATH) with value (C:\\Program Files\\SimVascular\\SimVascular\\2023-03-27;C:\\Program Files\\SimVascular\\SimVascular\\2023-03-27\\mitk\\bin;C:\\Program Files\\SimVascular\\SimVascular\\2023-03-27\\Python3.5\\Scripts)\n  Set/Append (SV_PLUGIN_PATH) with value (C:\\Program Files\\SimVascular\\SimVascular\\2023-03-27\\mitk\\bin\\plugins\\Release;C:\\Program Files\\SimVascular\\SimVascular\\2023-03-27\\mitk\\bin\\Release;C:\\Program Files\\SimVascular\\SimVascular\\2023-03-27\\plugins)\n  Set/Append (QT_PLUGIN_PATH) with value (C:\\Program Files\\SimVascular\\SimVascular\\2023-03-27\\qt-plugins)\n  Set/Append (TCLLIBPATH) with value (C:\\Program Files\\SimVascular\\SimVascular\\2023-03-27\\lib)\n  Set/Append (TCL_LIBRARY) with value (C:\\Program Files\\SimVascular\\SimVascular\\2023-03-27\\lib\\tcl8.6)\n  Set/Append (TK_LIBRARY) with value (C:\\Program Files\\SimVascular\\SimVascular\\2023-03-27\\lib\\tk8.6)\n  Set/Append (PYTHONHOME) with value (C:\\Program Files\\SimVascular\\SimVascular\\2023-03-27\\Python3.5)\n  Set/Append (PYTHONPATH) with value (C:\\Program Files\\SimVascular\\SimVascular\\2023-03-27\\Python3.5\\Lib;C:\\Program Files\\SimVascular\\SimVascular\\2023-03-27\\Python3.5\\Lib\\site-packages;C:\\Program Files\\SimVascular\\SimVascular\\2023-03-27)\nNote: No SimVascular plugins found in registry.\n(SOFTWARE\\Wow6432Node\\SIMVASCULAR\\Plugins\\2023-03-27)\n\n\nSimVascular Python Shell\nCopyright (c) Stanford University, The Regents of the University\n              of California, and others.  All Rights Reserved.\n\n  File \"C:\\Users\\998281\\Desktop\\Anna\\seg-to-cfd\\steps\\simvascular\\extract_faces.py\", line 50\n    print(f\"ERRORE: {msg}\", file=sys.stderr, flush=True)\n                         ^\nSyntaxError: invalid syntax\n"
-    },
-    {
-      "stage": "sv_extract",
-      "status": "pending",
-      "at": "2026-08-06T14:09:30+00:00",
-      "message": "failed: retry"
-    },
-    {
-      "stage": "sv_extract",
-      "status": "running",
-      "at": "2026-08-06T14:09:30+00:00",
-      "message": "avvio"
-    },
-    {
-      "stage": "sv_extract",
-      "status": "failed",
-      "at": "2026-08-06T14:09:42+00:00",
-      "message": "RuntimeError: pz000: SimVascular uscito con codice 1.\n--- output ---\nThu Aug  6 16:09:31 2026 \n0.19 core.mod.core.act WARNING: In us::GetModuleContext at D:\\a\\SimVascular\\SimVascular\\BuildWithMake\\ext\\bin\\mitk-2018.04.2\\include\\mitk\\CppMicroServices\\core\\include\\usGetModuleContext.h:57 : Module 'sv4guiModulesvFSI' unknown. The calling module probably misses a US_MODULE_NAME compile definition and/or a call to US_INITIALIZE_MODULE in one of its source files.\n\nReading SimVascular registry entries.\n\n  Set/Append (PATH) with value (C:\\Program Files\\SimVascular\\SimVascular\\2023-03-27;C:\\Program Files\\SimVascular\\SimVascular\\2023-03-27\\mitk\\bin;C:\\Program Files\\SimVascular\\SimVascular\\2023-03-27\\Python3.5\\Scripts)\n  Set/Append (SV_PLUGIN_PATH) with value (C:\\Program Files\\SimVascular\\SimVascular\\2023-03-27\\mitk\\bin\\plugins\\Release;C:\\Program Files\\SimVascular\\SimVascular\\2023-03-27\\mitk\\bin\\Release;C:\\Program Files\\SimVascular\\SimVascular\\2023-03-27\\plugins)\n  Set/Append (QT_PLUGIN_PATH) with value (C:\\Program Files\\SimVascular\\SimVascular\\2023-03-27\\qt-plugins)\n  Set/Append (TCLLIBPATH) with value (C:\\Program Files\\SimVascular\\SimVascular\\2023-03-27\\lib)\n  Set/Append (TCL_LIBRARY) with value (C:\\Program Files\\SimVascular\\SimVascular\\2023-03-27\\lib\\tcl8.6)\n  Set/Append (TK_LIBRARY) with value (C:\\Program Files\\SimVascular\\SimVascular\\2023-03-27\\lib\\tk8.6)\n  Set/Append (PYTHONHOME) with value (C:\\Program Files\\SimVascular\\SimVascular\\2023-03-27\\Python3.5)\n  Set/Append (PYTHONPATH) with value (C:\\Program Files\\SimVascular\\SimVascular\\2023-03-27\\Python3.5\\Lib;C:\\Program Files\\SimVascular\\SimVascular\\2023-03-27\\Python3.5\\Lib\\site-packages;C:\\Program Files\\SimVascular\\SimVascular\\2023-03-27)\nNote: No SimVascular plugins found in registry.\n(SOFTWARE\\Wow6432Node\\SIMVASCULAR\\Plugins\\2023-03-27)\n\n\nSimVascular Python Shell\nCopyright (c) Stanford University, The Regents of the University\n              of California, and others.  All Rights Reserved.\n\n[DEBUG] extract_faces argv: ['C:\\\\Users\\\\998281\\\\Desktop\\\\Anna\\\\seg-to-cfd\\\\steps\\\\simvascular\\\\extract_faces.py', '--input', 'database\\\\pz000\\\\lumen_tree_cfd_clip_cm.vtk', '--out-dir', 'database\\\\pz000\\\\work', '--separation-angle', '50']\nERRORE: input non trovato: database\\pz000\\lumen_tree_cfd_clip_cm.vtk\n"
-    },
-    {
-      "stage": "sv_extract",
-      "status": "pending",
-      "at": "2026-08-06T14:10:56+00:00",
-      "message": "failed: retry"
-    },
-    {
-      "stage": "sv_extract",
-      "status": "running",
-      "at": "2026-08-06T14:10:56+00:00",
-      "message": "avvio"
-    },
-    {
-      "stage": "sv_extract",
-      "status": "failed",
-      "at": "2026-08-06T14:11:01+00:00",
-      "message": "RuntimeError: pz000: SimVascular uscito con codice 1.\n--- output ---\nThu Aug  6 16:10:58 2026 \n0.63 core.mod.core.act WARNING: In us::GetModuleContext at D:\\a\\SimVascular\\SimVascular\\BuildWithMake\\ext\\bin\\mitk-2018.04.2\\include\\mitk\\CppMicroServices\\core\\include\\usGetModuleContext.h:57 : Module 'sv4guiModulesvFSI' unknown. The calling module probably misses a US_MODULE_NAME compile definition and/or a call to US_INITIALIZE_MODULE in one of its source files.\n\nReading SimVascular registry entries.\n\n  Set/Append (PATH) with value (C:\\Program Files\\SimVascular\\SimVascular\\2023-03-27;C:\\Program Files\\SimVascular\\SimVascular\\2023-03-27\\mitk\\bin;C:\\Program Files\\SimVascular\\SimVascular\\2023-03-27\\Python3.5\\Scripts)\n  Set/Append (SV_PLUGIN_PATH) with value (C:\\Program Files\\SimVascular\\SimVascular\\2023-03-27\\mitk\\bin\\plugins\\Release;C:\\Program Files\\SimVascular\\SimVascular\\2023-03-27\\mitk\\bin\\Release;C:\\Program Files\\SimVascular\\SimVascular\\2023-03-27\\plugins)\n  Set/Append (QT_PLUGIN_PATH) with value (C:\\Program Files\\SimVascular\\SimVascular\\2023-03-27\\qt-plugins)\n  Set/Append (TCLLIBPATH) with value (C:\\Program Files\\SimVascular\\SimVascular\\2023-03-27\\lib)\n  Set/Append (TCL_LIBRARY) with value (C:\\Program Files\\SimVascular\\SimVascular\\2023-03-27\\lib\\tcl8.6)\n  Set/Append (TK_LIBRARY) with value (C:\\Program Files\\SimVascular\\SimVascular\\2023-03-27\\lib\\tk8.6)\n  Set/Append (PYTHONHOME) with value (C:\\Program Files\\SimVascular\\SimVascular\\2023-03-27\\Python3.5)\n  Set/Append (PYTHONPATH) with value (C:\\Program Files\\SimVascular\\SimVascular\\2023-03-27\\Python3.5\\Lib;C:\\Program Files\\SimVascular\\SimVascular\\2023-03-27\\Python3.5\\Lib\\site-packages;C:\\Program Files\\SimVascular\\SimVascular\\2023-03-27)\nNote: No SimVascular plugins found in registry.\n(SOFTWARE\\Wow6432Node\\SIMVASCULAR\\Plugins\\2023-03-27)\n\n\nSimVascular Python Shell\nCopyright (c) Stanford University, The Regents of the University\n              of California, and others.  All Rights Reserved.\n\n[DEBUG] extract_faces argv: ['C:\\\\Users\\\\998281\\\\Desktop\\\\Anna\\\\seg-to-cfd\\\\steps\\\\simvascular\\\\extract_faces.py', '--input', 'database\\\\pz000\\\\lumen_tree_cfd_clip_cm.vtk', '--out-dir', 'database\\\\pz000\\\\work', '--separation-angle', '50']\nERRORE: input non trovato: database\\pz000\\lumen_tree_cfd_clip_cm.vtk\n"
-    },
-    {
-      "stage": "sv_extract",
-      "status": "pending",
-      "at": "2026-08-06T14:14:58+00:00",
-      "message": "failed: retry"
-    },
-    {
-      "stage": "sv_extract",
-      "status": "running",
-      "at": "2026-08-06T14:14:58+00:00",
-      "message": "avvio"
-    },
-    {
-      "stage": "sv_extract",
-      "status": "failed",
-      "at": "2026-08-06T14:15:02+00:00",
-      "message": "RuntimeError: pz000: SimVascular uscito con codice 1.\n--- output ---\nThu Aug  6 16:14:58 2026 \n0.28 core.mod.core.act WARNING: In us::GetModuleContext at D:\\a\\SimVascular\\SimVascular\\BuildWithMake\\ext\\bin\\mitk-2018.04.2\\include\\mitk\\CppMicroServices\\core\\include\\usGetModuleContext.h:57 : Module 'sv4guiModulesvFSI' unknown. The calling module probably misses a US_MODULE_NAME compile definition and/or a call to US_INITIALIZE_MODULE in one of its source files.\n\nReading SimVascular registry entries.\n\n  Set/Append (PATH) with value (C:\\Program Files\\SimVascular\\SimVascular\\2023-03-27;C:\\Program Files\\SimVascular\\SimVascular\\2023-03-27\\mitk\\bin;C:\\Program Files\\SimVascular\\SimVascular\\2023-03-27\\Python3.5\\Scripts)\n  Set/Append (SV_PLUGIN_PATH) with value (C:\\Program Files\\SimVascular\\SimVascular\\2023-03-27\\mitk\\bin\\plugins\\Release;C:\\Program Files\\SimVascular\\SimVascular\\2023-03-27\\mitk\\bin\\Release;C:\\Program Files\\SimVascular\\SimVascular\\2023-03-27\\plugins)\n  Set/Append (QT_PLUGIN_PATH) with value (C:\\Program Files\\SimVascular\\SimVascular\\2023-03-27\\qt-plugins)\n  Set/Append (TCLLIBPATH) with value (C:\\Program Files\\SimVascular\\SimVascular\\2023-03-27\\lib)\n  Set/Append (TCL_LIBRARY) with value (C:\\Program Files\\SimVascular\\SimVascular\\2023-03-27\\lib\\tcl8.6)\n  Set/Append (TK_LIBRARY) with value (C:\\Program Files\\SimVascular\\SimVascular\\2023-03-27\\lib\\tk8.6)\n  Set/Append (PYTHONHOME) with value (C:\\Program Files\\SimVascular\\SimVascular\\2023-03-27\\Python3.5)\n  Set/Append (PYTHONPATH) with value (C:\\Program Files\\SimVascular\\SimVascular\\2023-03-27\\Python3.5\\Lib;C:\\Program Files\\SimVascular\\SimVascular\\2023-03-27\\Python3.5\\Lib\\site-packages;C:\\Program Files\\SimVascular\\SimVascular\\2023-03-27)\nNote: No SimVascular plugins found in registry.\n(SOFTWARE\\Wow6432Node\\SIMVASCULAR\\Plugins\\2023-03-27)\n\n\nSimVascular Python Shell\nCopyright (c) Stanford University, The Regents of the University\n              of California, and others.  All Rights Reserved.\n\n[DEBUG] extract_faces argv: ['C:\\\\Users\\\\998281\\\\Desktop\\\\Anna\\\\seg-to-cfd\\\\steps\\\\simvascular\\\\extract_faces.py', '--input', 'database\\\\pz000\\\\lumen_tree_cfd_clip_cm.vtk', '--out-dir', 'database\\\\pz000', '--separation-angle', '50']\nERRORE: input non trovato: database\\pz000\\lumen_tree_cfd_clip_cm.vtk\n"
-    },
-    {
-      "stage": "sv_extract",
-      "status": "pending",
-      "at": "2026-08-06T14:15:47+00:00",
-      "message": "failed: retry"
-    },
-    {
-      "stage": "sv_extract",
-      "status": "running",
-      "at": "2026-08-06T14:15:47+00:00",
-      "message": "avvio"
-    },
-    {
-      "stage": "sv_extract",
-      "status": "failed",
-      "at": "2026-08-06T14:15:50+00:00",
-      "message": "RuntimeError: pz000: SimVascular uscito con codice 1.\n--- output ---\nThu Aug  6 16:15:47 2026 \n0.24 core.mod.core.act WARNING: In us::GetModuleContext at D:\\a\\SimVascular\\SimVascular\\BuildWithMake\\ext\\bin\\mitk-2018.04.2\\include\\mitk\\CppMicroServices\\core\\include\\usGetModuleContext.h:57 : Module 'sv4guiModulesvFSI' unknown. The calling module probably misses a US_MODULE_NAME compile definition and/or a call to US_INITIALIZE_MODULE in one of its source files.\n\nReading SimVascular registry entries.\n\n  Set/Append (PATH) with value (C:\\Program Files\\SimVascular\\SimVascular\\2023-03-27;C:\\Program Files\\SimVascular\\SimVascular\\2023-03-27\\mitk\\bin;C:\\Program Files\\SimVascular\\SimVascular\\2023-03-27\\Python3.5\\Scripts)\n  Set/Append (SV_PLUGIN_PATH) with value (C:\\Program Files\\SimVascular\\SimVascular\\2023-03-27\\mitk\\bin\\plugins\\Release;C:\\Program Files\\SimVascular\\SimVascular\\2023-03-27\\mitk\\bin\\Release;C:\\Program Files\\SimVascular\\SimVascular\\2023-03-27\\plugins)\n  Set/Append (QT_PLUGIN_PATH) with value (C:\\Program Files\\SimVascular\\SimVascular\\2023-03-27\\qt-plugins)\n  Set/Append (TCLLIBPATH) with value (C:\\Program Files\\SimVascular\\SimVascular\\2023-03-27\\lib)\n  Set/Append (TCL_LIBRARY) with value (C:\\Program Files\\SimVascular\\SimVascular\\2023-03-27\\lib\\tcl8.6)\n  Set/Append (TK_LIBRARY) with value (C:\\Program Files\\SimVascular\\SimVascular\\2023-03-27\\lib\\tk8.6)\n  Set/Append (PYTHONHOME) with value (C:\\Program Files\\SimVascular\\SimVascular\\2023-03-27\\Python3.5)\n  Set/Append (PYTHONPATH) with value (C:\\Program Files\\SimVascular\\SimVascular\\2023-03-27\\Python3.5\\Lib;C:\\Program Files\\SimVascular\\SimVascular\\2023-03-27\\Python3.5\\Lib\\site-packages;C:\\Program Files\\SimVascular\\SimVascular\\2023-03-27)\nNote: No SimVascular plugins found in registry.\n(SOFTWARE\\Wow6432Node\\SIMVASCULAR\\Plugins\\2023-03-27)\n\n\nSimVascular Python Shell\nCopyright (c) Stanford University, The Regents of the University\n              of California, and others.  All Rights Reserved.\n\n[DEBUG] extract_faces argv: ['C:\\\\Users\\\\998281\\\\Desktop\\\\Anna\\\\seg-to-cfd\\\\steps\\\\simvascular\\\\extract_faces.py', '--input', 'database\\\\pz000\\\\lumen_tree_cfd_clip_cm.vtk', '--out-dir', 'database\\\\pz000', '--separation-angle', '50']\nERRORE: input non trovato: database\\pz000\\lumen_tree_cfd_clip_cm.vtk\n"
-    },
-    {
-      "stage": "sv_extract",
-      "status": "pending",
-      "at": "2026-08-06T14:17:45+00:00",
-      "message": "failed: retry"
-    },
-    {
-      "stage": "sv_extract",
-      "status": "running",
-      "at": "2026-08-06T14:17:45+00:00",
-      "message": "avvio"
-    },
-    {
-      "stage": "sv_extract",
-      "status": "failed",
-      "at": "2026-08-06T14:17:49+00:00",
-      "message": "RuntimeError: pz000: SimVascular uscito con codice 1.\n--- output ---\nThu Aug  6 16:17:46 2026 \n0.25 core.mod.core.act WARNING: In us::GetModuleContext at D:\\a\\SimVascular\\SimVascular\\BuildWithMake\\ext\\bin\\mitk-2018.04.2\\include\\mitk\\CppMicroServices\\core\\include\\usGetModuleContext.h:57 : Module 'sv4guiModulesvFSI' unknown. The calling module probably misses a US_MODULE_NAME compile definition and/or a call to US_INITIALIZE_MODULE in one of its source files.\n\nReading SimVascular registry entries.\n\n  Set/Append (PATH) with value (C:\\Program Files\\SimVascular\\SimVascular\\2023-03-27;C:\\Program Files\\SimVascular\\SimVascular\\2023-03-27\\mitk\\bin;C:\\Program Files\\SimVascular\\SimVascular\\2023-03-27\\Python3.5\\Scripts)\n  Set/Append (SV_PLUGIN_PATH) with value (C:\\Program Files\\SimVascular\\SimVascular\\2023-03-27\\mitk\\bin\\plugins\\Release;C:\\Program Files\\SimVascular\\SimVascular\\2023-03-27\\mitk\\bin\\Release;C:\\Program Files\\SimVascular\\SimVascular\\2023-03-27\\plugins)\n  Set/Append (QT_PLUGIN_PATH) with value (C:\\Program Files\\SimVascular\\SimVascular\\2023-03-27\\qt-plugins)\n  Set/Append (TCLLIBPATH) with value (C:\\Program Files\\SimVascular\\SimVascular\\2023-03-27\\lib)\n  Set/Append (TCL_LIBRARY) with value (C:\\Program Files\\SimVascular\\SimVascular\\2023-03-27\\lib\\tcl8.6)\n  Set/Append (TK_LIBRARY) with value (C:\\Program Files\\SimVascular\\SimVascular\\2023-03-27\\lib\\tk8.6)\n  Set/Append (PYTHONHOME) with value (C:\\Program Files\\SimVascular\\SimVascular\\2023-03-27\\Python3.5)\n  Set/Append (PYTHONPATH) with value (C:\\Program Files\\SimVascular\\SimVascular\\2023-03-27\\Python3.5\\Lib;C:\\Program Files\\SimVascular\\SimVascular\\2023-03-27\\Python3.5\\Lib\\site-packages;C:\\Program Files\\SimVascular\\SimVascular\\2023-03-27)\nNote: No SimVascular plugins found in registry.\n(SOFTWARE\\Wow6432Node\\SIMVASCULAR\\Plugins\\2023-03-27)\n\n\nSimVascular Python Shell\nCopyright (c) Stanford University, The Regents of the University\n              of California, and others.  All Rights Reserved.\n\n[DEBUG] extract_faces argv: ['C:\\\\Users\\\\998281\\\\Desktop\\\\Anna\\\\seg-to-cfd\\\\steps\\\\simvascular\\\\extract_faces.py', '--input', 'C:\\\\Users\\\\998281\\\\Desktop\\\\Anna\\\\seg-to-cfd\\\\database\\\\pz000\\\\lumen_tree_cfd_clip_cm.vtk', '--out-dir', 'C:\\\\Users\\\\998281\\\\Desktop\\\\Anna\\\\seg-to-cfd\\\\database\\\\pz000', '--separation-angle', '50']\n[DEBUG] extract_faces cwd: C:\\Program Files\\SimVascular\\SimVascular\\2023-03-27\n[DEBUG] extract_faces abs input: C:\\Users\\998281\\Desktop\\Anna\\seg-to-cfd\\database\\pz000\\lumen_tree_cfd_clip_cm.vtk\n[DEBUG] extract_faces abs out-dir: C:\\Users\\998281\\Desktop\\Anna\\seg-to-cfd\\database\\pz000\nERRORE: C:\\Users\\998281\\Desktop\\Anna\\seg-to-cfd\\database\\pz000\\lumen_tree_cfd_clip_cm.vtk: non leggibile come PolyData legacy (0 punti/celle). Forse ParaView l'ha salvato come unstructured grid.\n"
-    },
-    {
-      "stage": "sv_extract",
-      "status": "pending",
-      "at": "2026-08-06T14:24:01+00:00",
-      "message": "failed: retry"
-    },
-    {
-      "stage": "sv_extract",
-      "status": "running",
-      "at": "2026-08-06T14:24:01+00:00",
-      "message": "avvio"
-    },
-    {
-      "stage": "sv_extract",
-      "status": "failed",
-      "at": "2026-08-06T14:24:02+00:00",
-      "message": "RuntimeError: pz000: SimVascular uscito con codice 1.\n--- output ---\nThu Aug  6 16:24:02 2026 \n0.27 core.mod.core.act WARNING: In us::GetModuleContext at D:\\a\\SimVascular\\SimVascular\\BuildWithMake\\ext\\bin\\mitk-2018.04.2\\include\\mitk\\CppMicroServices\\core\\include\\usGetModuleContext.h:57 : Module 'sv4guiModulesvFSI' unknown. The calling module probably misses a US_MODULE_NAME compile definition and/or a call to US_INITIALIZE_MODULE in one of its source files.\n\nReading SimVascular registry entries.\n\n  Set/Append (PATH) with value (C:\\Program Files\\SimVascular\\SimVascular\\2023-03-27;C:\\Program Files\\SimVascular\\SimVascular\\2023-03-27\\mitk\\bin;C:\\Program Files\\SimVascular\\SimVascular\\2023-03-27\\Python3.5\\Scripts)\n  Set/Append (SV_PLUGIN_PATH) with value (C:\\Program Files\\SimVascular\\SimVascular\\2023-03-27\\mitk\\bin\\plugins\\Release;C:\\Program Files\\SimVascular\\SimVascular\\2023-03-27\\mitk\\bin\\Release;C:\\Program Files\\SimVascular\\SimVascular\\2023-03-27\\plugins)\n  Set/Append (QT_PLUGIN_PATH) with value (C:\\Program Files\\SimVascular\\SimVascular\\2023-03-27\\qt-plugins)\n  Set/Append (TCLLIBPATH) with value (C:\\Program Files\\SimVascular\\SimVascular\\2023-03-27\\lib)\n  Set/Append (TCL_LIBRARY) with value (C:\\Program Files\\SimVascular\\SimVascular\\2023-03-27\\lib\\tcl8.6)\n  Set/Append (TK_LIBRARY) with value (C:\\Program Files\\SimVascular\\SimVascular\\2023-03-27\\lib\\tk8.6)\n  Set/Append (PYTHONHOME) with value (C:\\Program Files\\SimVascular\\SimVascular\\2023-03-27\\Python3.5)\n  Set/Append (PYTHONPATH) with value (C:\\Program Files\\SimVascular\\SimVascular\\2023-03-27\\Python3.5\\Lib;C:\\Program Files\\SimVascular\\SimVascular\\2023-03-27\\Python3.5\\Lib\\site-packages;C:\\Program Files\\SimVascular\\SimVascular\\2023-03-27)\nNote: No SimVascular plugins found in registry.\n(SOFTWARE\\Wow6432Node\\SIMVASCULAR\\Plugins\\2023-03-27)\n\n\nSimVascular Python Shell\nCopyright (c) Stanford University, The Regents of the University\n              of California, and others.  All Rights Reserved.\n\n  File \"C:\\Users\\998281\\Desktop\\Anna\\seg-to-cfd\\steps\\simvascular\\extract_faces.py\", line 85\n    raise ValueError(f\"{path}: file .vtk vuoto o non leggibile.\")\n                                                               ^\nSyntaxError: invalid syntax\n"
-    },
-    {
-      "stage": "sv_extract",
-      "status": "pending",
-      "at": "2026-08-06T14:25:31+00:00",
-      "message": "failed: retry"
-    },
-    {
-      "stage": "sv_extract",
-      "status": "running",
-      "at": "2026-08-06T14:25:31+00:00",
-      "message": "avvio"
-    },
-    {
-      "stage": "sv_extract",
-      "status": "failed",
-      "at": "2026-08-06T14:25:35+00:00",
-      "message": "RuntimeError: pz000: SimVascular uscito con codice 3221225477.\n--- output ---\nThu Aug  6 16:25:31 2026 \n0.20 core.mod.core.act WARNING: In us::GetModuleContext at D:\\a\\SimVascular\\SimVascular\\BuildWithMake\\ext\\bin\\mitk-2018.04.2\\include\\mitk\\CppMicroServices\\core\\include\\usGetModuleContext.h:57 : Module 'sv4guiModulesvFSI' unknown. The calling module probably misses a US_MODULE_NAME compile definition and/or a call to US_INITIALIZE_MODULE in one of its source files.\n\nReading SimVascular registry entries.\n\n  Set/Append (PATH) with value (C:\\Program Files\\SimVascular\\SimVascular\\2023-03-27;C:\\Program Files\\SimVascular\\SimVascular\\2023-03-27\\mitk\\bin;C:\\Program Files\\SimVascular\\SimVascular\\2023-03-27\\Python3.5\\Scripts)\n  Set/Append (SV_PLUGIN_PATH) with value (C:\\Program Files\\SimVascular\\SimVascular\\2023-03-27\\mitk\\bin\\plugins\\Release;C:\\Program Files\\SimVascular\\SimVascular\\2023-03-27\\mitk\\bin\\Release;C:\\Program Files\\SimVascular\\SimVascular\\2023-03-27\\plugins)\n  Set/Append (QT_PLUGIN_PATH) with value (C:\\Program Files\\SimVascular\\SimVascular\\2023-03-27\\qt-plugins)\n  Set/Append (TCLLIBPATH) with value (C:\\Program Files\\SimVascular\\SimVascular\\2023-03-27\\lib)\n  Set/Append (TCL_LIBRARY) with value (C:\\Program Files\\SimVascular\\SimVascular\\2023-03-27\\lib\\tcl8.6)\n  Set/Append (TK_LIBRARY) with value (C:\\Program Files\\SimVascular\\SimVascular\\2023-03-27\\lib\\tk8.6)\n  Set/Append (PYTHONHOME) with value (C:\\Program Files\\SimVascular\\SimVascular\\2023-03-27\\Python3.5)\n  Set/Append (PYTHONPATH) with value (C:\\Program Files\\SimVascular\\SimVascular\\2023-03-27\\Python3.5\\Lib;C:\\Program Files\\SimVascular\\SimVascular\\2023-03-27\\Python3.5\\Lib\\site-packages;C:\\Program Files\\SimVascular\\SimVascular\\2023-03-27)\nNote: No SimVascular plugins found in registry.\n(SOFTWARE\\Wow6432Node\\SIMVASCULAR\\Plugins\\2023-03-27)\n\n\nSimVascular Python Shell\nCopyright (c) Stanford University, The Regents of the University\n              of California, and others.  All Rights Reserved.\n\n[DEBUG] extract_faces argv: ['C:\\\\Users\\\\998281\\\\Desktop\\\\Anna\\\\seg-to-cfd\\\\steps\\\\simvascular\\\\extract_faces.py', '--input', 'C:\\\\Users\\\\998281\\\\Desktop\\\\Anna\\\\seg-to-cfd\\\\database\\\\pz000\\\\lumen_tree_cfd_clip_cm.vtk', '--out-dir', 'C:\\\\Users\\\\998281\\\\Desktop\\\\Anna\\\\seg-to-cfd\\\\database\\\\pz000', '--separation-angle', '50']\n[DEBUG] extract_faces cwd: C:\\Program Files\\SimVascular\\SimVascular\\2023-03-27\n[DEBUG] extract_faces abs input: C:\\Users\\998281\\Desktop\\Anna\\seg-to-cfd\\database\\pz000\\lumen_tree_cfd_clip_cm.vtk\n[DEBUG] extract_faces abs out-dir: C:\\Users\\998281\\Desktop\\Anna\\seg-to-cfd\\database\\pz000\n"
-    },
-    {
-      "stage": "sv_extract",
-      "status": "pending",
-      "at": "2026-08-06T14:40:05+00:00",
-      "message": "failed: retry"
-    },
-    {
-      "stage": "sv_extract",
-      "status": "running",
-      "at": "2026-08-06T14:40:05+00:00",
-      "message": "avvio"
-    },
-    {
-      "stage": "sv_extract",
-      "status": "failed",
-      "at": "2026-08-06T14:40:09+00:00",
-      "message": "RuntimeError: pz000: SimVascular uscito con codice 3221225477.\n--- output ---\nThu Aug  6 16:40:06 2026 \n0.27 core.mod.core.act WARNING: In us::GetModuleContext at D:\\a\\SimVascular\\SimVascular\\BuildWithMake\\ext\\bin\\mitk-2018.04.2\\include\\mitk\\CppMicroServices\\core\\include\\usGetModuleContext.h:57 : Module 'sv4guiModulesvFSI' unknown. The calling module probably misses a US_MODULE_NAME compile definition and/or a call to US_INITIALIZE_MODULE in one of its source files.\n\nReading SimVascular registry entries.\n\n  Set/Append (PATH) with value (C:\\Program Files\\SimVascular\\SimVascular\\2023-03-27;C:\\Program Files\\SimVascular\\SimVascular\\2023-03-27\\mitk\\bin;C:\\Program Files\\SimVascular\\SimVascular\\2023-03-27\\Python3.5\\Scripts)\n  Set/Append (SV_PLUGIN_PATH) with value (C:\\Program Files\\SimVascular\\SimVascular\\2023-03-27\\mitk\\bin\\plugins\\Release;C:\\Program Files\\SimVascular\\SimVascular\\2023-03-27\\mitk\\bin\\Release;C:\\Program Files\\SimVascular\\SimVascular\\2023-03-27\\plugins)\n  Set/Append (QT_PLUGIN_PATH) with value (C:\\Program Files\\SimVascular\\SimVascular\\2023-03-27\\qt-plugins)\n  Set/Append (TCLLIBPATH) with value (C:\\Program Files\\SimVascular\\SimVascular\\2023-03-27\\lib)\n  Set/Append (TCL_LIBRARY) with value (C:\\Program Files\\SimVascular\\SimVascular\\2023-03-27\\lib\\tcl8.6)\n  Set/Append (TK_LIBRARY) with value (C:\\Program Files\\SimVascular\\SimVascular\\2023-03-27\\lib\\tk8.6)\n  Set/Append (PYTHONHOME) with value (C:\\Program Files\\SimVascular\\SimVascular\\2023-03-27\\Python3.5)\n  Set/Append (PYTHONPATH) with value (C:\\Program Files\\SimVascular\\SimVascular\\2023-03-27\\Python3.5\\Lib;C:\\Program Files\\SimVascular\\SimVascular\\2023-03-27\\Python3.5\\Lib\\site-packages;C:\\Program Files\\SimVascular\\SimVascular\\2023-03-27)\nNote: No SimVascular plugins found in registry.\n(SOFTWARE\\Wow6432Node\\SIMVASCULAR\\Plugins\\2023-03-27)\n\n\nSimVascular Python Shell\nCopyright (c) Stanford University, The Regents of the University\n              of California, and others.  All Rights Reserved.\n\n[DEBUG] extract_faces argv: ['C:\\\\Users\\\\998281\\\\Desktop\\\\Anna\\\\seg-to-cfd\\\\steps\\\\simvascular\\\\extract_faces.py', '--input', 'C:\\\\Users\\\\998281\\\\Desktop\\\\Anna\\\\seg-to-cfd\\\\database\\\\pz000\\\\lumen_tree_cfd_clip_cm.vtk', '--out-dir', 'C:\\\\Users\\\\998281\\\\Desktop\\\\Anna\\\\seg-to-cfd\\\\database\\\\pz000', '--separation-angle', '50']\n[DEBUG] extract_faces cwd: C:\\Program Files\\SimVascular\\SimVascular\\2023-03-27\n[DEBUG] extract_faces abs input: C:\\Users\\998281\\Desktop\\Anna\\seg-to-cfd\\database\\pz000\\lumen_tree_cfd_clip_cm.vtk\n[DEBUG] extract_faces abs out-dir: C:\\Users\\998281\\Desktop\\Anna\\seg-to-cfd\\database\\pz000\n[DEBUG] read_surface start: C:\\Users\\998281\\Desktop\\Anna\\seg-to-cfd\\database\\pz000\\lumen_tree_cfd_clip_cm.vtk\n[DEBUG] read_surface before poly_reader.Update\n[DEBUG] read_surface poly_reader output: points=85085, polys=0, lines=2, verts=0, strips=0\n[DEBUG] read_surface poly_reader incomplete or no polys, fallback to vtkDataSetReader\n[DEBUG] read_surface before reader.Update\n[DEBUG] read_surface after reader.Update\n[DEBUG] read_surface ds type: vtkPolyData points=85085\n[DEBUG] read_surface polydata cells=2, polys=0, verts=0, lines=2, strips=0\n[DEBUG] read_surface before tri.Update\n"
-    },
-    {
-      "stage": "sv_extract",
-      "status": "pending",
-      "at": "2026-08-06T14:42:22+00:00",
-      "message": "failed: retry"
-    },
-    {
-      "stage": "sv_extract",
-      "status": "running",
-      "at": "2026-08-06T14:42:22+00:00",
-      "message": "avvio"
-    },
-    {
-      "stage": "sv_extract",
-      "status": "failed",
-      "at": "2026-08-06T14:42:23+00:00",
-      "message": "RuntimeError: pz000: SimVascular uscito con codice 1.\n--- output ---\nThu Aug  6 16:42:23 2026 \n0.25 core.mod.core.act WARNING: In us::GetModuleContext at D:\\a\\SimVascular\\SimVascular\\BuildWithMake\\ext\\bin\\mitk-2018.04.2\\include\\mitk\\CppMicroServices\\core\\include\\usGetModuleContext.h:57 : Module 'sv4guiModulesvFSI' unknown. The calling module probably misses a US_MODULE_NAME compile definition and/or a call to US_INITIALIZE_MODULE in one of its source files.\n\nReading SimVascular registry entries.\n\n  Set/Append (PATH) with value (C:\\Program Files\\SimVascular\\SimVascular\\2023-03-27;C:\\Program Files\\SimVascular\\SimVascular\\2023-03-27\\mitk\\bin;C:\\Program Files\\SimVascular\\SimVascular\\2023-03-27\\Python3.5\\Scripts)\n  Set/Append (SV_PLUGIN_PATH) with value (C:\\Program Files\\SimVascular\\SimVascular\\2023-03-27\\mitk\\bin\\plugins\\Release;C:\\Program Files\\SimVascular\\SimVascular\\2023-03-27\\mitk\\bin\\Release;C:\\Program Files\\SimVascular\\SimVascular\\2023-03-27\\plugins)\n  Set/Append (QT_PLUGIN_PATH) with value (C:\\Program Files\\SimVascular\\SimVascular\\2023-03-27\\qt-plugins)\n  Set/Append (TCLLIBPATH) with value (C:\\Program Files\\SimVascular\\SimVascular\\2023-03-27\\lib)\n  Set/Append (TCL_LIBRARY) with value (C:\\Program Files\\SimVascular\\SimVascular\\2023-03-27\\lib\\tcl8.6)\n  Set/Append (TK_LIBRARY) with value (C:\\Program Files\\SimVascular\\SimVascular\\2023-03-27\\lib\\tk8.6)\n  Set/Append (PYTHONHOME) with value (C:\\Program Files\\SimVascular\\SimVascular\\2023-03-27\\Python3.5)\n  Set/Append (PYTHONPATH) with value (C:\\Program Files\\SimVascular\\SimVascular\\2023-03-27\\Python3.5\\Lib;C:\\Program Files\\SimVascular\\SimVascular\\2023-03-27\\Python3.5\\Lib\\site-packages;C:\\Program Files\\SimVascular\\SimVascular\\2023-03-27)\nNote: No SimVascular plugins found in registry.\n(SOFTWARE\\Wow6432Node\\SIMVASCULAR\\Plugins\\2023-03-27)\n\n\nSimVascular Python Shell\nCopyright (c) Stanford University, The Regents of the University\n              of California, and others.  All Rights Reserved.\n\n  File \"C:\\Users\\998281\\Desktop\\Anna\\seg-to-cfd\\steps\\simvascular\\extract_faces.py\", line 101\n    print(f\"[DEBUG] read_surface finale: points={pd.GetNumberOfPoints()} \"\n                                                                         ^\nSyntaxError: invalid syntax\n"
-    },
-    {
-      "stage": "sv_extract",
-      "status": "pending",
-      "at": "2026-08-06T14:43:21+00:00",
-      "message": "failed: retry"
-    },
-    {
-      "stage": "sv_extract",
-      "status": "running",
-      "at": "2026-08-06T14:43:21+00:00",
-      "message": "avvio"
-    },
-    {
-      "stage": "sv_extract",
-      "status": "failed",
-      "at": "2026-08-06T14:43:22+00:00",
-      "message": "RuntimeError: pz000: SimVascular uscito con codice 1.\n--- output ---\nThu Aug  6 16:43:22 2026 \n0.17 core.mod.core.act WARNING: In us::GetModuleContext at D:\\a\\SimVascular\\SimVascular\\BuildWithMake\\ext\\bin\\mitk-2018.04.2\\include\\mitk\\CppMicroServices\\core\\include\\usGetModuleContext.h:57 : Module 'sv4guiModulesvFSI' unknown. The calling module probably misses a US_MODULE_NAME compile definition and/or a call to US_INITIALIZE_MODULE in one of its source files.\n\nReading SimVascular registry entries.\n\n  Set/Append (PATH) with value (C:\\Program Files\\SimVascular\\SimVascular\\2023-03-27;C:\\Program Files\\SimVascular\\SimVascular\\2023-03-27\\mitk\\bin;C:\\Program Files\\SimVascular\\SimVascular\\2023-03-27\\Python3.5\\Scripts)\n  Set/Append (SV_PLUGIN_PATH) with value (C:\\Program Files\\SimVascular\\SimVascular\\2023-03-27\\mitk\\bin\\plugins\\Release;C:\\Program Files\\SimVascular\\SimVascular\\2023-03-27\\mitk\\bin\\Release;C:\\Program Files\\SimVascular\\SimVascular\\2023-03-27\\plugins)\n  Set/Append (QT_PLUGIN_PATH) with value (C:\\Program Files\\SimVascular\\SimVascular\\2023-03-27\\qt-plugins)\n  Set/Append (TCLLIBPATH) with value (C:\\Program Files\\SimVascular\\SimVascular\\2023-03-27\\lib)\n  Set/Append (TCL_LIBRARY) with value (C:\\Program Files\\SimVascular\\SimVascular\\2023-03-27\\lib\\tcl8.6)\n  Set/Append (TK_LIBRARY) with value (C:\\Program Files\\SimVascular\\SimVascular\\2023-03-27\\lib\\tk8.6)\n  Set/Append (PYTHONHOME) with value (C:\\Program Files\\SimVascular\\SimVascular\\2023-03-27\\Python3.5)\n  Set/Append (PYTHONPATH) with value (C:\\Program Files\\SimVascular\\SimVascular\\2023-03-27\\Python3.5\\Lib;C:\\Program Files\\SimVascular\\SimVascular\\2023-03-27\\Python3.5\\Lib\\site-packages;C:\\Program Files\\SimVascular\\SimVascular\\2023-03-27)\nNote: No SimVascular plugins found in registry.\n(SOFTWARE\\Wow6432Node\\SIMVASCULAR\\Plugins\\2023-03-27)\n\n\nSimVascular Python Shell\nCopyright (c) Stanford University, The Regents of the University\n              of California, and others.  All Rights Reserved.\n\n  File \"C:\\Users\\998281\\Desktop\\Anna\\seg-to-cfd\\steps\\simvascular\\extract_faces.py\", line 104\n    raise ValueError(f\"{path}: nessuna faccia triangolare estratta.\")\n                                                                   ^\nSyntaxError: invalid syntax\n"
-    },
-    {
-      "stage": "sv_extract",
-      "status": "pending",
-      "at": "2026-08-06T14:44:32+00:00",
-      "message": "failed: retry"
-    },
-    {
-      "stage": "sv_extract",
-      "status": "running",
-      "at": "2026-08-06T14:44:32+00:00",
-      "message": "avvio"
-    },
-    {
-      "stage": "sv_extract",
-      "status": "failed",
-      "at": "2026-08-06T14:44:35+00:00",
-      "message": "RuntimeError: pz000: SimVascular uscito con codice 1.\n--- output ---\nThu Aug  6 16:44:33 2026 \n0.17 core.mod.core.act WARNING: In us::GetModuleContext at D:\\a\\SimVascular\\SimVascular\\BuildWithMake\\ext\\bin\\mitk-2018.04.2\\include\\mitk\\CppMicroServices\\core\\include\\usGetModuleContext.h:57 : Module 'sv4guiModulesvFSI' unknown. The calling module probably misses a US_MODULE_NAME compile definition and/or a call to US_INITIALIZE_MODULE in one of its source files.\n\nReading SimVascular registry entries.\n\n  Set/Append (PATH) with value (C:\\Program Files\\SimVascular\\SimVascular\\2023-03-27;C:\\Program Files\\SimVascular\\SimVascular\\2023-03-27\\mitk\\bin;C:\\Program Files\\SimVascular\\SimVascular\\2023-03-27\\Python3.5\\Scripts)\n  Set/Append (SV_PLUGIN_PATH) with value (C:\\Program Files\\SimVascular\\SimVascular\\2023-03-27\\mitk\\bin\\plugins\\Release;C:\\Program Files\\SimVascular\\SimVascular\\2023-03-27\\mitk\\bin\\Release;C:\\Program Files\\SimVascular\\SimVascular\\2023-03-27\\plugins)\n  Set/Append (QT_PLUGIN_PATH) with value (C:\\Program Files\\SimVascular\\SimVascular\\2023-03-27\\qt-plugins)\n  Set/Append (TCLLIBPATH) with value (C:\\Program Files\\SimVascular\\SimVascular\\2023-03-27\\lib)\n  Set/Append (TCL_LIBRARY) with value (C:\\Program Files\\SimVascular\\SimVascular\\2023-03-27\\lib\\tcl8.6)\n  Set/Append (TK_LIBRARY) with value (C:\\Program Files\\SimVascular\\SimVascular\\2023-03-27\\lib\\tk8.6)\n  Set/Append (PYTHONHOME) with value (C:\\Program Files\\SimVascular\\SimVascular\\2023-03-27\\Python3.5)\n  Set/Append (PYTHONPATH) with value (C:\\Program Files\\SimVascular\\SimVascular\\2023-03-27\\Python3.5\\Lib;C:\\Program Files\\SimVascular\\SimVascular\\2023-03-27\\Python3.5\\Lib\\site-packages;C:\\Program Files\\SimVascular\\SimVascular\\2023-03-27)\nNote: No SimVascular plugins found in registry.\n(SOFTWARE\\Wow6432Node\\SIMVASCULAR\\Plugins\\2023-03-27)\n\n\nSimVascular Python Shell\nCopyright (c) Stanford University, The Regents of the University\n              of California, and others.  All Rights Reserved.\n\n[DEBUG] extract_faces argv: ['C:\\\\Users\\\\998281\\\\Desktop\\\\Anna\\\\seg-to-cfd\\\\steps\\\\simvascular\\\\extract_faces.py', '--input', 'C:\\\\Users\\\\998281\\\\Desktop\\\\Anna\\\\seg-to-cfd\\\\database\\\\pz000\\\\lumen_tree_cfd_clip_cm.vtk', '--out-dir', 'C:\\\\Users\\\\998281\\\\Desktop\\\\Anna\\\\seg-to-cfd\\\\database\\\\pz000', '--separation-angle', '50']\n[DEBUG] extract_faces cwd: C:\\Program Files\\SimVascular\\SimVascular\\2023-03-27\n[DEBUG] extract_faces abs input: C:\\Users\\998281\\Desktop\\Anna\\seg-to-cfd\\database\\pz000\\lumen_tree_cfd_clip_cm.vtk\n[DEBUG] extract_faces abs out-dir: C:\\Users\\998281\\Desktop\\Anna\\seg-to-cfd\\database\\pz000\n[DEBUG] read_surface finale: points=85085 polys=0 lines=0\nERRORE: C:\\Users\\998281\\Desktop\\Anna\\seg-to-cfd\\database\\pz000\\lumen_tree_cfd_clip_cm.vtk: nessuna faccia triangolare estratta.\n"
-    },
-    {
-      "stage": "sv_extract",
-      "status": "pending",
-      "at": "2026-08-06T14:47:14+00:00",
-      "message": "failed: retry"
-    },
-    {
-      "stage": "sv_extract",
-      "status": "running",
-      "at": "2026-08-06T14:47:14+00:00",
-      "message": "avvio"
-    },
-    {
-      "stage": "sv_extract",
-      "status": "failed",
-      "at": "2026-08-06T14:47:18+00:00",
-      "message": "RuntimeError: pz000: SimVascular uscito con codice 3221225477.\n--- output ---\nThu Aug  6 16:47:15 2026 \n0.23 core.mod.core.act WARNING: In us::GetModuleContext at D:\\a\\SimVascular\\SimVascular\\BuildWithMake\\ext\\bin\\mitk-2018.04.2\\include\\mitk\\CppMicroServices\\core\\include\\usGetModuleContext.h:57 : Module 'sv4guiModulesvFSI' unknown. The calling module probably misses a US_MODULE_NAME compile definition and/or a call to US_INITIALIZE_MODULE in one of its source files.\n\nReading SimVascular registry entries.\n\n  Set/Append (PATH) with value (C:\\Program Files\\SimVascular\\SimVascular\\2023-03-27;C:\\Program Files\\SimVascular\\SimVascular\\2023-03-27\\mitk\\bin;C:\\Program Files\\SimVascular\\SimVascular\\2023-03-27\\Python3.5\\Scripts)\n  Set/Append (SV_PLUGIN_PATH) with value (C:\\Program Files\\SimVascular\\SimVascular\\2023-03-27\\mitk\\bin\\plugins\\Release;C:\\Program Files\\SimVascular\\SimVascular\\2023-03-27\\mitk\\bin\\Release;C:\\Program Files\\SimVascular\\SimVascular\\2023-03-27\\plugins)\n  Set/Append (QT_PLUGIN_PATH) with value (C:\\Program Files\\SimVascular\\SimVascular\\2023-03-27\\qt-plugins)\n  Set/Append (TCLLIBPATH) with value (C:\\Program Files\\SimVascular\\SimVascular\\2023-03-27\\lib)\n  Set/Append (TCL_LIBRARY) with value (C:\\Program Files\\SimVascular\\SimVascular\\2023-03-27\\lib\\tcl8.6)\n  Set/Append (TK_LIBRARY) with value (C:\\Program Files\\SimVascular\\SimVascular\\2023-03-27\\lib\\tk8.6)\n  Set/Append (PYTHONHOME) with value (C:\\Program Files\\SimVascular\\SimVascular\\2023-03-27\\Python3.5)\n  Set/Append (PYTHONPATH) with value (C:\\Program Files\\SimVascular\\SimVascular\\2023-03-27\\Python3.5\\Lib;C:\\Program Files\\SimVascular\\SimVascular\\2023-03-27\\Python3.5\\Lib\\site-packages;C:\\Program Files\\SimVascular\\SimVascular\\2023-03-27)\nNote: No SimVascular plugins found in registry.\n(SOFTWARE\\Wow6432Node\\SIMVASCULAR\\Plugins\\2023-03-27)\n\n\nSimVascular Python Shell\nCopyright (c) Stanford University, The Regents of the University\n              of California, and others.  All Rights Reserved.\n\n[DEBUG] extract_faces argv: ['C:\\\\Users\\\\998281\\\\Desktop\\\\Anna\\\\seg-to-cfd\\\\steps\\\\simvascular\\\\extract_faces.py', '--input', 'C:\\\\Users\\\\998281\\\\Desktop\\\\Anna\\\\seg-to-cfd\\\\database\\\\pz000\\\\lumen_tree_cfd_clip_cm.vtk', '--out-dir', 'C:\\\\Users\\\\998281\\\\Desktop\\\\Anna\\\\seg-to-cfd\\\\database\\\\pz000', '--separation-angle', '50']\n[DEBUG] extract_faces cwd: C:\\Program Files\\SimVascular\\SimVascular\\2023-03-27\n[DEBUG] extract_faces abs input: C:\\Users\\998281\\Desktop\\Anna\\seg-to-cfd\\database\\pz000\\lumen_tree_cfd_clip_cm.vtk\n[DEBUG] extract_faces abs out-dir: C:\\Users\\998281\\Desktop\\Anna\\seg-to-cfd\\database\\pz000\n"
-    },
-    {
-      "stage": "sv_extract",
-      "status": "pending",
-      "at": "2026-08-06T14:47:36+00:00",
-      "message": "failed: retry"
-    },
-    {
-      "stage": "sv_extract",
-      "status": "running",
-      "at": "2026-08-06T14:47:36+00:00",
-      "message": "avvio"
-    },
-    {
-      "stage": "sv_extract",
-      "status": "failed",
-      "at": "2026-08-06T14:47:40+00:00",
-      "message": "RuntimeError: pz000: SimVascular uscito con codice 3221225477.\n--- output ---\nThu Aug  6 16:47:37 2026 \n0.25 core.mod.core.act WARNING: In us::GetModuleContext at D:\\a\\SimVascular\\SimVascular\\BuildWithMake\\ext\\bin\\mitk-2018.04.2\\include\\mitk\\CppMicroServices\\core\\include\\usGetModuleContext.h:57 : Module 'sv4guiModulesvFSI' unknown. The calling module probably misses a US_MODULE_NAME compile definition and/or a call to US_INITIALIZE_MODULE in one of its source files.\n\nReading SimVascular registry entries.\n\n  Set/Append (PATH) with value (C:\\Program Files\\SimVascular\\SimVascular\\2023-03-27;C:\\Program Files\\SimVascular\\SimVascular\\2023-03-27\\mitk\\bin;C:\\Program Files\\SimVascular\\SimVascular\\2023-03-27\\Python3.5\\Scripts)\n  Set/Append (SV_PLUGIN_PATH) with value (C:\\Program Files\\SimVascular\\SimVascular\\2023-03-27\\mitk\\bin\\plugins\\Release;C:\\Program Files\\SimVascular\\SimVascular\\2023-03-27\\mitk\\bin\\Release;C:\\Program Files\\SimVascular\\SimVascular\\2023-03-27\\plugins)\n  Set/Append (QT_PLUGIN_PATH) with value (C:\\Program Files\\SimVascular\\SimVascular\\2023-03-27\\qt-plugins)\n  Set/Append (TCLLIBPATH) with value (C:\\Program Files\\SimVascular\\SimVascular\\2023-03-27\\lib)\n  Set/Append (TCL_LIBRARY) with value (C:\\Program Files\\SimVascular\\SimVascular\\2023-03-27\\lib\\tcl8.6)\n  Set/Append (TK_LIBRARY) with value (C:\\Program Files\\SimVascular\\SimVascular\\2023-03-27\\lib\\tk8.6)\n  Set/Append (PYTHONHOME) with value (C:\\Program Files\\SimVascular\\SimVascular\\2023-03-27\\Python3.5)\n  Set/Append (PYTHONPATH) with value (C:\\Program Files\\SimVascular\\SimVascular\\2023-03-27\\Python3.5\\Lib;C:\\Program Files\\SimVascular\\SimVascular\\2023-03-27\\Python3.5\\Lib\\site-packages;C:\\Program Files\\SimVascular\\SimVascular\\2023-03-27)\nNote: No SimVascular plugins found in registry.\n(SOFTWARE\\Wow6432Node\\SIMVASCULAR\\Plugins\\2023-03-27)\n\n\nSimVascular Python Shell\nCopyright (c) Stanford University, The Regents of the University\n              of California, and others.  All Rights Reserved.\n\n[DEBUG] extract_faces argv: ['C:\\\\Users\\\\998281\\\\Desktop\\\\Anna\\\\seg-to-cfd\\\\steps\\\\simvascular\\\\extract_faces.py', '--input', 'C:\\\\Users\\\\998281\\\\Desktop\\\\Anna\\\\seg-to-cfd\\\\database\\\\pz000\\\\lumen_tree_cfd_clip_cm.vtk', '--out-dir', 'C:\\\\Users\\\\998281\\\\Desktop\\\\Anna\\\\seg-to-cfd\\\\database\\\\pz000', '--separation-angle', '50']\n[DEBUG] extract_faces cwd: C:\\Program Files\\SimVascular\\SimVascular\\2023-03-27\n[DEBUG] extract_faces abs input: C:\\Users\\998281\\Desktop\\Anna\\seg-to-cfd\\database\\pz000\\lumen_tree_cfd_clip_cm.vtk\n[DEBUG] extract_faces abs out-dir: C:\\Users\\998281\\Desktop\\Anna\\seg-to-cfd\\database\\pz000\n"
+      "at": "2026-08-07T08:04:54+00:00",
+      "message": "RuntimeError: pz000: SimVascular uscito con codice 3221225477.\n--- output ---\nFri Aug  7 10:04:45 2026 \n0.36 core.mod.core.act WARNING: In us::GetModuleContext at D:\\a\\SimVascular\\SimVascular\\BuildWithMake\\ext\\bin\\mitk-2018.04.2\\include\\mitk\\CppMicroServices\\core\\include\\usGetModuleContext.h:57 : Module 'sv4guiModulesvFSI' unknown. The calling module probably misses a US_MODULE_NAME compile definition and/or a call to US_INITIALIZE_MODULE in one of its source files.\n\nReading SimVascular registry entries.\n\n  Set/Append (PATH) with value (C:\\Program Files\\SimVascular\\SimVascular\\2023-03-27;C:\\Program Files\\SimVascular\\SimVascular\\2023-03-27\\mitk\\bin;C:\\Program Files\\SimVascular\\SimVascular\\2023-03-27\\Python3.5\\Scripts)\n  Set/Append (SV_PLUGIN_PATH) with value (C:\\Program Files\\SimVascular\\SimVascular\\2023-03-27\\mitk\\bin\\plugins\\Release;C:\\Program Files\\SimVascular\\SimVascular\\2023-03-27\\mitk\\bin\\Release;C:\\Program Files\\SimVascular\\SimVascular\\2023-03-27\\plugins)\n  Set/Append (QT_PLUGIN_PATH) with value (C:\\Program Files\\SimVascular\\SimVascular\\2023-03-27\\qt-plugins)\n  Set/Append (TCLLIBPATH) with value (C:\\Program Files\\SimVascular\\SimVascular\\2023-03-27\\lib)\n  Set/Append (TCL_LIBRARY) with value (C:\\Program Files\\SimVascular\\SimVascular\\2023-03-27\\lib\\tcl8.6)\n  Set/Append (TK_LIBRARY) with value (C:\\Program Files\\SimVascular\\SimVascular\\2023-03-27\\lib\\tk8.6)\n  Set/Append (PYTHONHOME) with value (C:\\Program Files\\SimVascular\\SimVascular\\2023-03-27\\Python3.5)\n  Set/Append (PYTHONPATH) with value (C:\\Program Files\\SimVascular\\SimVascular\\2023-03-27\\Python3.5\\Lib;C:\\Program Files\\SimVascular\\SimVascular\\2023-03-27\\Python3.5\\Lib\\site-packages;C:\\Program Files\\SimVascular\\SimVascular\\2023-03-27)\nNote: No SimVascular plugins found in registry.\n(SOFTWARE\\Wow6432Node\\SIMVASCULAR\\Plugins\\2023-03-27)\n\n\nSimVascular Python Shell\nCopyright (c) Stanford University, The Regents of the University\n              of California, and others.  All Rights Reserved.\n\n[DEBUG] extract_faces argv: ['C:\\\\Users\\\\998281\\\\Desktop\\\\Anna\\\\seg-to-cfd\\\\steps\\\\simvascular\\\\extract_faces.py', '--input', 'C:\\\\Users\\\\998281\\\\Desktop\\\\Anna\\\\seg-to-cfd\\\\database\\\\pz000\\\\lumen_tree_cfd_clip_cm.vtk', '--out-dir', 'C:\\\\Users\\\\998281\\\\Desktop\\\\Anna\\\\seg-to-cfd\\\\database\\\\pz000', '--separation-angle', '50']\n[DEBUG] extract_faces cwd: C:\\Program Files\\SimVascular\\SimVascular\\2023-03-27\n[DEBUG] extract_faces abs input: C:\\Users\\998281\\Desktop\\Anna\\seg-to-cfd\\database\\pz000\\lumen_tree_cfd_clip_cm.vtk\n[DEBUG] extract_faces abs out-dir: C:\\Users\\998281\\Desktop\\Anna\\seg-to-cfd\\database\\pz000\n[DEBUG] read_surface finale: points=85081 polys=170166 lines=0 verts=0\n[DEBUG] normali coerenti: cell_normals=True point_normals=True\n[DEBUG] read_surface OK\n[DEBUG] scritto input SV temporaneo: C:\\Users\\998281\\Desktop\\Anna\\seg-to-cfd\\database\\pz000\\_sv_input.vtp\n[DEBUG] Modeler.read OK\n[DEBUG] chiamo compute_boundary_faces(angle=50.0) ...\n"
     }
   ]
 }

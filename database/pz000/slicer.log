@@ -28,7 +28,7 @@ ModuleType: CommandLineModule
 
 Decimation command line: 
 
-C:/3D Slicer 5.10.0/bin/../lib/Slicer-5.10/cli-modules/Decimation.exe --reductionFactor 0.88434 --method FastQuadric --deleteBoundary --aggressiveness 4 C:/Users/998281/AppData/Local/Temp/Slicer/DBICA_vtkMRMLModelNodeF.obj C:/Users/998281/AppData/Local/Temp/Slicer/DBICA_vtkMRMLModelNodeG.obj 
+C:/3D Slicer 5.10.0/bin/../lib/Slicer-5.10/cli-modules/Decimation.exe --reductionFactor 0.88434 --method FastQuadric --deleteBoundary --aggressiveness 4 C:/Users/998281/AppData/Local/Temp/Slicer/CIJEI_vtkMRMLModelNodeF.obj C:/Users/998281/AppData/Local/Temp/Slicer/CIJEI_vtkMRMLModelNodeG.obj 
 
 
 Decimation standard output:
@@ -42,7 +42,7 @@ Decimation completed without errors
 
 
 Warning: In vtkMRMLModelStorageNode.cxx, line 453
-vtkMRMLModelStorageNode (00000264DBD383D0): ReadDataInternal (vtkMRMLModelStorageNode2): File C:/Users/998281/AppData/Local/Temp/Slicer/DBICA_vtkMRMLModelNodeG.obj does not contain coordinate system information. Using LPS.
+vtkMRMLModelStorageNode (000001CC33857370): ReadDataInternal (vtkMRMLModelStorageNode2): File C:/Users/998281/AppData/Local/Temp/Slicer/CIJEI_vtkMRMLModelNodeG.obj does not contain coordinate system information. Using LPS.
 
 
 Found CommandLine Module, target is C:/3D Slicer 5.10.0/bin/../lib/Slicer-5.10/cli-modules/Decimation.exe
@@ -53,7 +53,7 @@ ModuleType: CommandLineModule
 
 Decimation command line: 
 
-C:/3D Slicer 5.10.0/bin/../lib/Slicer-5.10/cli-modules/Decimation.exe --reductionFactor 0.88434 --method FastQuadric --deleteBoundary --aggressiveness 4 C:/Users/998281/AppData/Local/Temp/Slicer/DBICA_vtkMRMLModelNodeH.obj C:/Users/998281/AppData/Local/Temp/Slicer/DBICA_vtkMRMLModelNodeI.obj 
+C:/3D Slicer 5.10.0/bin/../lib/Slicer-5.10/cli-modules/Decimation.exe --reductionFactor 0.88434 --method FastQuadric --deleteBoundary --aggressiveness 4 C:/Users/998281/AppData/Local/Temp/Slicer/CIJEI_vtkMRMLModelNodeH.obj C:/Users/998281/AppData/Local/Temp/Slicer/CIJEI_vtkMRMLModelNodeI.obj 
 
 
 Decimation standard output:
@@ -67,7 +67,7 @@ Decimation completed without errors
 
 
 Warning: In vtkMRMLModelStorageNode.cxx, line 453
-vtkMRMLModelStorageNode (00000264DCB55A40): ReadDataInternal (vtkMRMLModelStorageNode3): File C:/Users/998281/AppData/Local/Temp/Slicer/DBICA_vtkMRMLModelNodeI.obj does not contain coordinate system information. Using LPS.
+vtkMRMLModelStorageNode (000001CC33857120): ReadDataInternal (vtkMRMLModelStorageNode3): File C:/Users/998281/AppData/Local/Temp/Slicer/CIJEI_vtkMRMLModelNodeI.obj does not contain coordinate system information. Using LPS.
 
 
 Error: can't reconstruct new profile.
@@ -81,7 +81,7 @@ ModuleType: CommandLineModule
 
 Decimation command line: 
 
-C:/3D Slicer 5.10.0/bin/../lib/Slicer-5.10/cli-modules/Decimation.exe --reductionFactor 0.88434 --method FastQuadric --deleteBoundary --aggressiveness 4 C:/Users/998281/AppData/Local/Temp/Slicer/DBICA_vtkMRMLModelNodeJ.obj C:/Users/998281/AppData/Local/Temp/Slicer/DBICA_vtkMRMLModelNodeBA.obj 
+C:/3D Slicer 5.10.0/bin/../lib/Slicer-5.10/cli-modules/Decimation.exe --reductionFactor 0.88434 --method FastQuadric --deleteBoundary --aggressiveness 4 C:/Users/998281/AppData/Local/Temp/Slicer/CIJEI_vtkMRMLModelNodeJ.obj C:/Users/998281/AppData/Local/Temp/Slicer/CIJEI_vtkMRMLModelNodeBA.obj 
 
 
 Decimation standard output:
@@ -95,7 +95,7 @@ Decimation completed without errors
 
 
 Warning: In vtkMRMLModelStorageNode.cxx, line 453
-vtkMRMLModelStorageNode (00000264E4CC3B50): ReadDataInternal (vtkMRMLModelStorageNode4): File C:/Users/998281/AppData/Local/Temp/Slicer/DBICA_vtkMRMLModelNodeBA.obj does not contain coordinate system information. Using LPS.
+vtkMRMLModelStorageNode (000001CC33859620): ReadDataInternal (vtkMRMLModelStorageNode4): File C:/Users/998281/AppData/Local/Temp/Slicer/CIJEI_vtkMRMLModelNodeBA.obj does not contain coordinate system information. Using LPS.
 
 
 [pz000] Endpoints salvati in: C:\Users\998281\Desktop\Anna\seg-to-cfd\database\pz000\Endpoints_pz000.mrk.json
@@ -109,7 +109,7 @@ ModuleType: CommandLineModule
 
 Decimation command line: 
 
-C:/3D Slicer 5.10.0/bin/../lib/Slicer-5.10/cli-modules/Decimation.exe --reductionFactor 0.88434 --method FastQuadric --deleteBoundary --aggressiveness 4 C:/Users/998281/AppData/Local/Temp/Slicer/DBICA_vtkMRMLModelNodeBC.obj C:/Users/998281/AppData/Local/Temp/Slicer/DBICA_vtkMRMLModelNodeBD.obj 
+C:/3D Slicer 5.10.0/bin/../lib/Slicer-5.10/cli-modules/Decimation.exe --reductionFactor 0.88434 --method FastQuadric --deleteBoundary --aggressiveness 4 C:/Users/998281/AppData/Local/Temp/Slicer/CIJEI_vtkMRMLModelNodeBC.obj C:/Users/998281/AppData/Local/Temp/Slicer/CIJEI_vtkMRMLModelNodeBD.obj 
 
 
 Decimation standard output:
@@ -123,7 +123,7 @@ Decimation completed without errors
 
 
 Warning: In vtkMRMLModelStorageNode.cxx, line 453
-vtkMRMLModelStorageNode (00000264E4CC2FC0): ReadDataInternal (vtkMRMLModelStorageNode5): File C:/Users/998281/AppData/Local/Temp/Slicer/DBICA_vtkMRMLModelNodeBD.obj does not contain coordinate system information. Using LPS.
+vtkMRMLModelStorageNode (000001CC33858A90): ReadDataInternal (vtkMRMLModelStorageNode5): File C:/Users/998281/AppData/Local/Temp/Slicer/CIJEI_vtkMRMLModelNodeBD.obj does not contain coordinate system information. Using LPS.
 
 
 [pz000] Usando ExtractCenterlineLogic.extractCenterline
@@ -153,5 +153,5 @@ Can't find adjacent point. Bailing out.
 
 [pz000] Modello cap+flow extension salvato in: C:\Users\998281\Desktop\Anna\seg-to-cfd\database\pz000\lumen_tree_cfd_cap.vtk
 Switch to module:  ""
-QMainWindow::saveState(): 'objectName' not set for QDockWidget 0x264e494a7a0 'CFD Pipeline - Revisione Endpoints;
+QMainWindow::saveState(): 'objectName' not set for QDockWidget 0x1cc3b0505e0 'CFD Pipeline - Revisione Endpoints;
 Switch to module:  ""

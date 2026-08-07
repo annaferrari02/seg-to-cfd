@@ -73,27 +73,71 @@ def read_surface(path):
     reader = vtk.vtkPolyDataReader()
     reader.SetFileName(path)
     reader.Update()
-    
-    poly_data = reader.GetOutput()
-    
-    # Se il lettore si blocca sulle linee degenerate, usa vtkGeometryFilter
-    # per estrarre esplicitamente solo le celle poligonali (superfici 2D)
-    clean_filter = vtk.vtkGeometryFilter()
-    clean_filter.SetInputData(poly_data)
-    # Forza l'estrazione mantenendo solo celle di superficie
-    clean_filter.CellClippingOff()
-    clean_filter.Update()
-    
-    # Garantisce che tutti i poligoni siano triangoli validi per SimVascular
-    tri_filter = vtk.vtkTriangleFilter()
-    tri_filter.SetInputData(clean_filter.GetOutput())
-    tri_filter.Update()
-    
-    pd = tri_filter.GetOutput()
-    print("[DEBUG] read_surface finale: points={} polys={}".format(
-        pd.GetNumberOfPoints(), pd.GetNumberOfPolys()
+
+    # Estrai la superficie e triangola.
+    geom = vtk.vtkGeometryFilter()
+    geom.SetInputData(reader.GetOutput())
+    geom.Update()
+
+    tri = vtk.vtkTriangleFilter()
+    tri.SetInputData(geom.GetOutput())
+    tri.Update()
+
+    # Unisci i punti coincidenti. IMPORTANTE: NON convertire le celle degeneri
+    # in linee/vertici. Il VTK di SimVascular, unendo punti quasi-coincidenti,
+    # fa collassare qualche triangolo in uno "sliver" ad area nulla e, con
+    # l'opzione di default attiva, lo trasforma in una LINEA. Una cella 1D nel
+    # modello manda in stallo compute_boundary_faces.
+    cleaner = vtk.vtkCleanPolyData()
+    cleaner.SetInputData(tri.GetOutput())
+    cleaner.PointMergingOn()
+    cleaner.ConvertPolysToLinesOff()
+    cleaner.ConvertLinesToPointsOff()
+    cleaner.ConvertStripsToPolysOff()
+    cleaner.Update()
+    cleaned = cleaner.GetOutput()
+
+    # DOPO il clean, tieni SOLO punti + poligoni. Cosi' sparisce qualunque cella
+    # 1D residua: sia la polilinea della flow-extension gia' nel file, sia gli
+    # eventuali triangoli collassati dal merge. Questo passo va fatto DOPO il
+    # clean, non prima: se lo si fa prima, il clean rigenera le linee.
+    pd = vtk.vtkPolyData()
+    pd.SetPoints(cleaned.GetPoints())
+    pd.SetPolys(cleaned.GetPolys())
+
+    print("[DEBUG] read_surface finale: points={} polys={} lines={} verts={}".format(
+        pd.GetNumberOfPoints(), pd.GetNumberOfPolys(),
+        pd.GetNumberOfLines(), pd.GetNumberOfVerts()
     ))
-    
+    if pd.GetNumberOfPolys() == 0:
+        raise ValueError(
+            "letti {} punti ma 0 poligoni: file probabilmente in legacy VTK 5.1 "
+            "non leggibile da questo SimVascular. Riscrivi il .vtk in 4.2 "
+            "dallo step ParaView.".format(pd.GetNumberOfPoints())
+        )
+
+    # Normali coerenti PRIMA di darla a SimVascular. compute_boundary_faces
+    # distingue le facce dall'angolo tra le normali di triangoli adiacenti: se
+    # il winding in uscita da ParaView e' incoerente, triangoli complanari
+    # sembrano a ~180 gradi, l'algoritmo frammenta e si impunta. ConsistencyOn
+    # uniforma il verso; AutoOrientNormalsOn le manda verso l'esterno (la
+    # superficie e' chiusa); SplittingOff preserva la topologia (niente vertici
+    # duplicati). E' il pre-condizionamento che la GUI fa all'import e che il
+    # percorso set_surface() su PolyData grezza salta.
+    normals = vtk.vtkPolyDataNormals()
+    normals.SetInputData(pd)
+    normals.SplittingOff()
+    normals.ConsistencyOn()
+    normals.AutoOrientNormalsOn()
+    normals.ComputeCellNormalsOn()
+    normals.ComputePointNormalsOn()
+    normals.NonManifoldTraversalOff()
+    normals.Update()
+    pd = normals.GetOutput()
+    print("[DEBUG] normali coerenti: cell_normals={} point_normals={}".format(
+        pd.GetCellData().GetNormals() is not None,
+        pd.GetPointData().GetNormals() is not None), flush=True)
+
     return pd
 
 
@@ -158,18 +202,41 @@ def main() -> int:
     except Exception as exc:
         return _die(str(exc))
 
+    # Scrivi la superficie condizionata in un .vtp temporaneo e falla RILEGGERE
+    # a SimVascular col suo reader nativo. E' esattamente cio' che fa la GUI:
+    # importa un FILE, non un oggetto VTK. Il percorso di lettura da file
+    # (Modeler.read) inizializza il modello in modo piu' completo di
+    # set_surface()/costruttore, che finora lasciava compute_boundary_faces in
+    # stallo.
+    sv_input = os.path.join(out_dir, "_sv_input.vtp")
     try:
-        modeler = sv.modeling.PolyData()
-        print("[DEBUG] created sv.modeling.PolyData", flush=True)
-        modeler.set_surface(surface)
-        print("[DEBUG] set_surface OK", flush=True)
+        w = vtk.vtkXMLPolyDataWriter()
+        w.SetFileName(sv_input)
+        w.SetInputData(surface)
+        w.Write()
+        print("[DEBUG] scritto input SV temporaneo: {}".format(sv_input), flush=True)
     except Exception as exc:
         traceback.print_exc(file=sys.stderr)
-        return _die("errore creazione PolyData: {}".format(exc))
+        return _die("errore scrittura input SV temporaneo: {}".format(exc))
+
+    try:
+        modeler = sv.modeling.Modeler(sv.modeling.Kernel.POLYDATA)
+        model = modeler.read(sv_input)
+        print("[DEBUG] Modeler.read OK", flush=True)
+    except Exception as exc:
+        traceback.print_exc(file=sys.stderr)
+        return _die("errore lettura modello SV (Modeler.read): {}".format(exc))
 
     # 2) Identifica le facce per angolo di separazione.
+    #    NB: se lo script si ferma QUI senza errore ne' riga successiva:
+    #      - lascialo girare qualche minuto: potrebbe essere LENTO per la
+    #        qualita' dei triangoli (schegge ad aspect ratio altissimo);
+    #      - controlla nel Task Manager se il processo consuma CPU (lento/loop)
+    #        oppure e' sparito (crash C++).
     try:
-        face_ids = modeler.compute_boundary_faces(angle=args.separation_angle)
+        print("[DEBUG] chiamo compute_boundary_faces(angle={}) ...".format(
+            args.separation_angle), flush=True)
+        face_ids = model.compute_boundary_faces(angle=args.separation_angle)
         print("[DEBUG] compute_boundary_faces returned {} faces".format(len(face_ids)), flush=True)
         print("[DEBUG] facce trovate (angolo {}): {}".format(args.separation_angle, face_ids), flush=True)
     except Exception as exc:
@@ -184,7 +251,7 @@ def main() -> int:
     wall_face_ids = []
     print("[DEBUG] {:>7} {:>12} {:>10}  classe".format('face_id', 'area', 'planarita'), flush=True)
     for fid in face_ids:
-        fpd = modeler.get_face_polydata(int(fid))
+        fpd = model.get_face_polydata(int(fid))
         area, centroid = area_and_centroid(fpd)
         if area <= 0.0 or centroid is None:
             return _die("faccia {}: area nulla, geometria degenere.".format(fid))
@@ -218,7 +285,7 @@ def main() -> int:
     model_out = os.path.join(out_dir, "model.vtp")
     writer = vtk.vtkXMLPolyDataWriter()
     writer.SetFileName(model_out)
-    writer.SetInputData(modeler.get_polydata())
+    writer.SetInputData(model.get_polydata())
     writer.Write()
 
     cap_json = os.path.join(out_dir, "cap_faces.json")

@@ -1,5 +1,5 @@
-Thu Aug  6 16:47:37 2026 
-0.25 core.mod.core.act WARNING: In us::GetModuleContext at D:\a\SimVascular\SimVascular\BuildWithMake\ext\bin\mitk-2018.04.2\include\mitk\CppMicroServices\core\include\usGetModuleContext.h:57 : Module 'sv4guiModulesvFSI' unknown. The calling module probably misses a US_MODULE_NAME compile definition and/or a call to US_INITIALIZE_MODULE in one of its source files.
+Fri Aug  7 10:04:45 2026 
+0.36 core.mod.core.act WARNING: In us::GetModuleContext at D:\a\SimVascular\SimVascular\BuildWithMake\ext\bin\mitk-2018.04.2\include\mitk\CppMicroServices\core\include\usGetModuleContext.h:57 : Module 'sv4guiModulesvFSI' unknown. The calling module probably misses a US_MODULE_NAME compile definition and/or a call to US_INITIALIZE_MODULE in one of its source files.
 
 Reading SimVascular registry entries.
 
@@ -23,3 +23,9 @@ Copyright (c) Stanford University, The Regents of the University
 [DEBUG] extract_faces cwd: C:\Program Files\SimVascular\SimVascular\2023-03-27
 [DEBUG] extract_faces abs input: C:\Users\998281\Desktop\Anna\seg-to-cfd\database\pz000\lumen_tree_cfd_clip_cm.vtk
 [DEBUG] extract_faces abs out-dir: C:\Users\998281\Desktop\Anna\seg-to-cfd\database\pz000
+[DEBUG] read_surface finale: points=85081 polys=170166 lines=0 verts=0
+[DEBUG] normali coerenti: cell_normals=True point_normals=True
+[DEBUG] read_surface OK
+[DEBUG] scritto input SV temporaneo: C:\Users\998281\Desktop\Anna\seg-to-cfd\database\pz000\_sv_input.vtp
+[DEBUG] Modeler.read OK
+[DEBUG] chiamo compute_boundary_faces(angle=50.0) ...

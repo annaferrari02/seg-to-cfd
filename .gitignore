@@ -6,3 +6,5 @@
 
 #files
 .config/paths.yaml
+.vtp
+.vtk
