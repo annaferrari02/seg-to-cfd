@@ -1,8 +1,10 @@
 #path a tutti gli "esecutori", softwares (quindi pvbatch, simvascular, svmultiphysics etc)
 
 #paraview 
-pvpython: "C:/Program Files/ParaView 5.13.0/bin/pvpython.exe"
-#3dslicer
+pvpython: "/home/trentodoc/APPS/ParaView-6.2.0-RC1-MPI-Linux-Python3.12-x86_64/bin/pvpython"
 
-slicer: "C:/3D Slicer 5.10.0/Slicer.exe"
-simvascular: "C:/Program Files/SimVascular/SimVascular/2023-03-27/sv.bat"
+#3dslicer
+slicer: "/home/trentodoc/APPS/Slicer-5.12.3-linux-amd64/Slicer"
+
+#SIMVASCULAR
+simvascular: "/usr/local/sv/simvascular/2026-06-08/simvascular"
