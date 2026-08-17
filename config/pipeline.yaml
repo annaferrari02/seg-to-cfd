@@ -5,7 +5,7 @@
 #   adapter : which adapter in the registry runs it
 #   action  : optional sub-action for multi-purpose adapters
 stages:
-  - {name: slicer,        type: interactive, adapter: slicer}
+  - {name: slicer,        type: auto, adapter: slicer}
   - {name: paraview,      type: auto,  adapter: paraview,    action: transform}
   - {name: sv_extract,    type: auto,  adapter: simvascular, action: extract}
   - {name: tag_endpoints, type: auto,  adapter: tag}

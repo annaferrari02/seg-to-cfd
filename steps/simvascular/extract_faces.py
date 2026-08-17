@@ -12,7 +12,7 @@ Uso (di norma lanciato dall'adapter, non a mano):
         --out-dir <cartella del paziente> \
         --separation-angle 50
 
-CONTRATTO (come gli altri step)
+CONTRATTO
     input : --input   file .vtk (PolyData legacy, gia' in cm, triangolato e
                        pulito da ParaView).
             --out-dir cartella del paziente dove scrivere gli output.
@@ -21,11 +21,10 @@ CONTRATTO (come gli altri step)
                                      ricarichera' sv_apply senza ricalcolare).
             <out-dir>/cap_faces.json {units, separation_angle, wall_face_ids,
                                      cap_faces:[{face_id, centroid, radius,
-                                     area, planarity}]}. La lista cap_faces e'
-                                     esattamente cio' che consuma sv_match_core.
+                                     area, planarity, circularity}]}. La lista
+                                     cap_faces e' cio' che consuma sv_match_core.
     exit  : != 0 a OGNI ambiguita' (fail loud): input illeggibile, nessun cap,
             meno di 2 cap, nessuna parete.
-
 """
 
 import argparse
@@ -41,9 +40,16 @@ from vtk.util.numpy_support import vtk_to_numpy
 import sv
 
 
-# Soglia di planarita' (rms fuori-piano / diametro della faccia). Sotto = cap.
-# Un disco piatto sta ~1e-3..1e-2; un pezzo di parete cilindrico ~0.1..0.3.
-DEFAULT_PLANARITY_TOL = 0.05
+# --- Soglie di classificazione cap vs wall -------------------------------------
+# Un cap e' un DISCO: piatto, tondo, con un solo anello di bordo.
+#   planarity  = rms fuori-piano / RAGGIO effettivo (NON la lunghezza): disco ~0,
+#                lembo di parete curvo molto piu' alto. Adimensionale, scala-invariante.
+#   circularity= 4*pi*area / perimetro^2: disco ~1, striscia allungata -> 0.
+#   min_cap_area = floor per scartare le schegge di triangolazione (aspect ratio
+#                  altissimo, area ~1e-4 cm^2) prima di classificarle.
+DEFAULT_PLANARITY_TOL = 0.15
+DEFAULT_MIN_CIRCULARITY = 0.60
+DEFAULT_MIN_CAP_AREA = 0.01   # cm^2
 
 
 def _die(msg):
@@ -60,7 +66,11 @@ def parse_args():
     parser.add_argument("--separation-angle", type=float, default=50.0,
                         help="angolo per compute_boundary_faces (default 50).")
     parser.add_argument("--cap-planarity-tol", type=float, default=DEFAULT_PLANARITY_TOL,
-                        help="soglia planarita' per classificare un cap (default 0.05).")
+                        help="soglia planarita' (rms/raggio) per un cap (default 0.15).")
+    parser.add_argument("--min-circularity", type=float, default=DEFAULT_MIN_CIRCULARITY,
+                        help="circolarita' minima per un cap (default 0.60).")
+    parser.add_argument("--min-cap-area", type=float, default=DEFAULT_MIN_CAP_AREA,
+                        help="area minima (cm^2) sotto cui la faccia e' una scheggia -> wall (default 0.01).")
 
     # SimVascular puo' anteporre argomenti propri: tieni solo cio' che segue "--".
     argv = sys.argv[1:]
@@ -68,6 +78,7 @@ def parse_args():
         argv = argv[argv.index("--") + 1:]
     print("[DEBUG] extract_faces argv: {}".format(sys.argv), flush=True)
     return parser.parse_args(argv)
+
 
 def read_surface(path):
     reader = vtk.vtkPolyDataReader()
@@ -141,12 +152,20 @@ def read_surface(path):
     return pd
 
 
-def area_and_centroid(face_pd: vtk.vtkPolyData):
-    """Area totale e centroide PESATO SULL'AREA di una faccia triangolata.
+def _used_points(face_pd):
+    """Punti REALMENTE usati dalla faccia. get_face_polydata porta con se' il
+    vtkPoints dell'intero modello: senza compattare, ogni fit di piano girerebbe
+    sui punti di tutta la superficie, non della singola faccia."""
+    clean = vtk.vtkCleanPolyData()
+    clean.SetInputData(face_pd)
+    clean.PointMergingOff()          # non fondere, solo rimuovere i punti orfani
+    clean.Update()
+    return vtk_to_numpy(clean.GetOutput().GetPoints().GetData())
 
-    Il centroide pesato sull'area e' il centro geometrico vero del cap; la media
-    dei punti sarebbe sbilanciata dove la mesh e' piu' fitta.
-    """
+
+def area_and_centroid(face_pd):
+    """Area totale e centroide PESATO SULL'AREA (centro geometrico vero del cap;
+    la media dei punti sarebbe sbilanciata dove la mesh e' piu' fitta)."""
     pts = vtk_to_numpy(face_pd.GetPoints().GetData())
     total_area = 0.0
     weighted = np.zeros(3)
@@ -164,30 +183,66 @@ def area_and_centroid(face_pd: vtk.vtkPolyData):
     return total_area, weighted / total_area
 
 
-def planarity(face_pd: vtk.vtkPolyData) -> float:
-    """Quanto e' piatta una faccia: rms della distanza fuori-piano / diametro.
-
-    Fit del piano ai minimi quadrati via SVD; la normale e' la direzione a
-    varianza minima. Valore ~0 = disco piatto (cap); valori alti = superficie
-    curva (parete). Scala-invariante.
-    """
-    pts = vtk_to_numpy(face_pd.GetPoints().GetData())
-    centered = pts - pts.mean(axis=0)
-    # Direzione a varianza minima = ultima riga di V^T della SVD.
-    _, _, vt = np.linalg.svd(centered, full_matrices=False)
-    normal = vt[-1]
-    out_of_plane = np.abs(centered @ normal)
-    rms = float(np.sqrt((out_of_plane ** 2).mean()))
-    diameter = 2.0 * float(np.linalg.norm(centered, axis=1).max())
-    return rms / diameter if diameter > 0 else 0.0
+def out_of_plane_rms(face_pd):
+    """RMS ASSOLUTO (cm) della distanza dei punti dal piano ai minimi quadrati.
+    La normale del piano e' la direzione a varianza minima (ultima riga di V^T
+    della SVD). Da normalizzare sul RAGGIO effettivo dal chiamante, non qui."""
+    pts = _used_points(face_pd)
+    c = pts - pts.mean(axis=0)
+    _, _, vt = np.linalg.svd(c, full_matrices=False)
+    return float(np.sqrt(((c @ vt[-1]) ** 2).mean()))
 
 
-def main() -> int:
+def face_boundary(face_pd):
+    """Perimetro dei bordi aperti e NUMERO DI ANELLI di bordo della faccia.
+    Un cap ha esattamente 1 anello (il rim); la parete ne ha molti (uno per
+    ogni cap con cui confina). n_loops>1 => parete, senza ambiguita'."""
+    fe = vtk.vtkFeatureEdges()
+    fe.SetInputData(face_pd)
+    fe.BoundaryEdgesOn()
+    fe.FeatureEdgesOff()
+    fe.NonManifoldEdgesOff()
+    fe.ManifoldEdgesOff()
+    fe.Update()
+    edges = fe.GetOutput()
+    if edges.GetNumberOfCells() == 0:
+        return 0.0, 0
+
+    pts = vtk_to_numpy(edges.GetPoints().GetData())
+    perim = 0.0
+    ids = vtk.vtkIdList()
+    lines = edges.GetLines()
+    lines.InitTraversal()
+    while lines.GetNextCell(ids):
+        for k in range(ids.GetNumberOfIds() - 1):
+            perim += float(np.linalg.norm(pts[ids.GetId(k + 1)] - pts[ids.GetId(k)]))
+
+    conn = vtk.vtkPolyDataConnectivityFilter()
+    conn.SetInputData(edges)
+    conn.SetExtractionModeToAllRegions()
+    conn.Update()
+    return perim, conn.GetNumberOfExtractedRegions()
+
+
+def classify_face(fpd, area, args):
+    """Ritorna (is_cap, metrics). Un cap deve essere: 1 anello di bordo, tondo
+    (circ>=soglia) E piatto (planar<soglia). Il triplo AND rende robusti anche
+    ai lembi di parete a loop singolo, che sono comunque allungati e/o curvi."""
+    perim, n_loops = face_boundary(fpd)
+    circ = 4.0 * np.pi * area / (perim * perim) if perim > 0 else 0.0
+    r_eff = float(np.sqrt(area / np.pi))
+    planar = out_of_plane_rms(fpd) / r_eff if r_eff > 0 else 1.0
+
+    is_cap = (n_loops == 1) and (circ >= args.min_circularity) and (planar < args.cap_planarity_tol)
+    ambiguous = n_loops == 1 and (circ >= args.min_circularity) != (planar < args.cap_planarity_tol)
+    return is_cap, {"circ": circ, "planar": planar, "n_loops": n_loops, "ambiguous": ambiguous}
+
+
+def main():
     args = parse_args()
 
     in_path = os.path.abspath(args.input)
     out_dir = os.path.abspath(args.out_dir)
-    print("[DEBUG] extract_faces cwd: {}".format(os.getcwd()), flush=True)
     print("[DEBUG] extract_faces abs input: {}".format(in_path), flush=True)
     print("[DEBUG] extract_faces abs out-dir: {}".format(out_dir), flush=True)
     if not os.path.exists(in_path):
@@ -195,26 +250,23 @@ def main() -> int:
     if not os.path.exists(out_dir):
         os.makedirs(out_dir)
 
-    # 1) Carica la superficie e costruisci il modello PolyData.
+    # 1) Carica e condiziona la superficie.
     try:
         surface = read_surface(str(in_path))
         print("[DEBUG] read_surface OK", flush=True)
     except Exception as exc:
         return _die(str(exc))
 
-    # Scrivi la superficie condizionata in un .vtp temporaneo e falla RILEGGERE
-    # a SimVascular col suo reader nativo. E' esattamente cio' che fa la GUI:
-    # importa un FILE, non un oggetto VTK. Il percorso di lettura da file
-    # (Modeler.read) inizializza il modello in modo piu' completo di
-    # set_surface()/costruttore, che finora lasciava compute_boundary_faces in
-    # stallo.
+    # Scrivi un .vtp temporaneo e fallo RILEGGERE a SimVascular col reader nativo:
+    # e' cio' che fa la GUI (importa un FILE). Modeler.read inizializza il modello
+    # meglio di set_surface() su PolyData grezza, che lasciava compute_boundary_faces
+    # in stallo.
     sv_input = os.path.join(out_dir, "_sv_input.vtp")
     try:
         w = vtk.vtkXMLPolyDataWriter()
         w.SetFileName(sv_input)
         w.SetInputData(surface)
         w.Write()
-        print("[DEBUG] scritto input SV temporaneo: {}".format(sv_input), flush=True)
     except Exception as exc:
         traceback.print_exc(file=sys.stderr)
         return _die("errore scrittura input SV temporaneo: {}".format(exc))
@@ -228,58 +280,61 @@ def main() -> int:
         return _die("errore lettura modello SV (Modeler.read): {}".format(exc))
 
     # 2) Identifica le facce per angolo di separazione.
-    #    NB: se lo script si ferma QUI senza errore ne' riga successiva:
-    #      - lascialo girare qualche minuto: potrebbe essere LENTO per la
-    #        qualita' dei triangoli (schegge ad aspect ratio altissimo);
-    #      - controlla nel Task Manager se il processo consuma CPU (lento/loop)
-    #        oppure e' sparito (crash C++).
     try:
-        print("[DEBUG] chiamo compute_boundary_faces(angle={}) ...".format(
-            args.separation_angle), flush=True)
         face_ids = model.compute_boundary_faces(angle=args.separation_angle)
-        print("[DEBUG] compute_boundary_faces returned {} faces".format(len(face_ids)), flush=True)
-        print("[DEBUG] facce trovate (angolo {}): {}".format(args.separation_angle, face_ids), flush=True)
+        print("[DEBUG] compute_boundary_faces: {} facce {}".format(len(face_ids), face_ids), flush=True)
     except Exception as exc:
         traceback.print_exc(file=sys.stderr)
         return _die("compute_boundary_faces ha fallito: {}".format(exc))
-
     if not face_ids:
         return _die("compute_boundary_faces non ha prodotto facce.")
 
-    # 3) Classifica ogni faccia per planarita': cap (piatta) vs wall (curva).
+    # 3) Classifica per FORMA (non per sola planarita'): disco piatto e tondo = cap.
     caps = []
     wall_face_ids = []
-    print("[DEBUG] {:>7} {:>12} {:>10}  classe".format('face_id', 'area', 'planarita'), flush=True)
+    print("[DEBUG] {:>7} {:>11} {:>7} {:>8} {:>6}  classe".format(
+        "face_id", "area", "circ", "planar", "loops"), flush=True)
     for fid in face_ids:
-        fpd = model.get_face_polydata(int(fid))
+        fid = int(fid)
+        fpd = model.get_face_polydata(fid)
         area, centroid = area_and_centroid(fpd)
-        if area <= 0.0 or centroid is None:
-            return _die("faccia {}: area nulla, geometria degenere.".format(fid))
-        p = planarity(fpd)
-        is_cap = p < args.cap_planarity_tol
+
+        # Scheggia / faccia degenere: NON e' un errore, e' triangolazione sporca
+        # alle giunzioni. Troppo piccola per essere un cap reale -> confluisce nel wall.
+        if area < args.min_cap_area or centroid is None:
+            wall_face_ids.append(fid)
+            print("[DEBUG] {:>7} {:>11.5f} {:>7} {:>8} {:>6}  wall (sliver)".format(
+                fid, area, "-", "-", "-"), flush=True)
+            continue
+
+        is_cap, m = classify_face(fpd, area, args)
+        if m["ambiguous"]:
+            print("[WARN] faccia {} ambigua: circ={:.2f} planar={:.3f} loops={} area={:.4f}".format(
+                fid, m["circ"], m["planar"], m["n_loops"], area), flush=True)
+
         klass = "cap" if is_cap else "wall"
-        print("[DEBUG] {fid:>7} {area:>12.5f} {p:>10.4f}  {klass}".format(fid=int(fid), area=area, p=p, klass=klass), flush=True)
+        print("[DEBUG] {:>7} {:>11.5f} {:>7.3f} {:>8.3f} {:>6d}  {}".format(
+            fid, area, m["circ"], m["planar"], m["n_loops"], klass), flush=True)
+
         if is_cap:
-            radius = float(np.sqrt(area / np.pi))
             caps.append({
-                "face_id": int(fid),
+                "face_id": fid,
                 "centroid": [float(centroid[0]), float(centroid[1]), float(centroid[2])],
-                "radius": radius,
+                "radius": float(np.sqrt(area / np.pi)),
                 "area": float(area),
-                "planarity": float(p),
+                "planarity": float(m["planar"]),
+                "circularity": float(m["circ"]),
             })
         else:
-            wall_face_ids.append(int(fid))
+            wall_face_ids.append(fid)
 
     # 4) Controlli di sanita' (fail loud).
     if len(caps) < 2:
-        return _die(
-            "trovati {} cap (servono >= 2: 1 inlet + >= 1 outlet). ".format(len(caps))
-            + "Prova un --separation-angle piu' basso: i cap potrebbero essersi "
-            + "fusi con la parete."
-        )
+        return _die("trovati {} cap (servono >= 2: 1 inlet + >= 1 outlet). ".format(len(caps))
+                    + "Abbassa --separation-angle (cap fusi con la parete) o "
+                    + "controlla --min-circularity/--cap-planarity-tol.")
     if not wall_face_ids:
-        return _die("nessuna faccia di parete identificata (tutte planari?).")
+        return _die("nessuna faccia di parete identificata.")
 
     # 5) Scrivi il modello con ModelFaceID (per sv_apply) e il JSON dei cap.
     model_out = os.path.join(out_dir, "model.vtp")
@@ -289,14 +344,13 @@ def main() -> int:
     writer.Write()
 
     cap_json = os.path.join(out_dir, "cap_faces.json")
-    payload = {
-        "units": "cm",
-        "separation_angle": args.separation_angle,
-        "wall_face_ids": wall_face_ids,
-        "cap_faces": caps,
-    }
     with open(cap_json, "w") as f:
-        f.write(json.dumps(payload, indent=2))
+        json.dump({
+            "units": "cm",
+            "separation_angle": args.separation_angle,
+            "wall_face_ids": wall_face_ids,
+            "cap_faces": caps,
+        }, f, indent=2)
 
     print("[OK] {} cap, {} facce di parete.".format(len(caps), len(wall_face_ids)), flush=True)
     print("[OK] scritto {}".format(model_out), flush=True)

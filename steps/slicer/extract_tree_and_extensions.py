@@ -130,6 +130,130 @@ def infer_vtk_coordinate_system(filename):
 
     return coordinate_system or slicer.vtkMRMLModelStorageNode.CoordinateSystemRAS
 
+def compute_inlet_from_top_slice(surface_polydata, offset=2.0):
+    """
+    Trova il centroide della sezione trasversale piu' alta dell'aorta (= inlet).
+
+    Ipotesi anatomica: l'aorta prossimale (inlet) e' il punto piu' craniale del modello,
+    quindi ha Z massima nel frame di Slicer (sia RAS che LPS hanno Superior come 3o asse).
+
+    Robustezza (fail-loud, coerente con la pipeline):
+      - verifica che il taglio non sia vuoto (altrimenti vtkCenterOfMass restituirebbe
+        silenziosamente (0,0,0), cioe' un inlet completamente sbagliato);
+      - se il piano interseca PIU' di una sezione (es. un ramo o l'arco che risale
+        e ricade a quella quota), tiene SOLO la componente connessa piu' vicina
+        all'apice, cosi' il centroide non cade a meta' strada tra due lumi;
+      - compatta la sezione con vtkCleanPolyData PRIMA del centroide: il
+        connectivity filter in output conserva TUTTI i punti in input, quindi senza
+        clean vtkCenterOfMass medierebbe anche i punti delle altre sezioni.
+    """
+    bounds = surface_polydata.GetBounds()
+    z_max = bounds[5]
+
+    # Apice = vertice della superficie con Z massima (serve a disambiguare la sezione)
+    apex = None
+    n_pts = surface_polydata.GetNumberOfPoints()
+    if n_pts == 0:
+        raise RuntimeError("compute_inlet_from_top_slice: superficie senza punti.")
+    for i in range(n_pts):
+        p = surface_polydata.GetPoint(i)
+        if apex is None or p[2] > apex[2]:
+            apex = p
+
+    # Piano di taglio orizzontale a 'offset' mm sotto l'apice
+    plane = vtk.vtkPlane()
+    plane.SetOrigin(0.0, 0.0, z_max - offset)
+    plane.SetNormal(0.0, 0.0, 1.0)
+
+    cutter = vtk.vtkCutter()
+    cutter.SetInputData(surface_polydata)
+    cutter.SetCutFunction(plane)
+    cutter.Update()
+
+    if cutter.GetOutput().GetNumberOfPoints() == 0:
+        raise RuntimeError(
+            f"compute_inlet_from_top_slice: taglio vuoto a z={z_max - offset:.3f} "
+            f"(z_max={z_max:.3f}, offset={offset}). Regola --> offset."
+        )
+
+    # Componenti connesse del contorno di taglio
+    conn = vtk.vtkPolyDataConnectivityFilter()
+    conn.SetInputConnection(cutter.GetOutputPort())
+    conn.SetExtractionModeToAllRegions()
+    conn.Update()
+    n_regions = conn.GetNumberOfExtractedRegions()
+    if n_regions == 0:
+        raise RuntimeError("compute_inlet_from_top_slice: nessuna sezione dal taglio superiore.")
+    if n_regions > 1:
+        print(f"[WARN] compute_inlet_from_top_slice: {n_regions} sezioni alla quota superiore; "
+              f"seleziono quella connessa all'apice.", flush=True)
+
+    # Tieni SOLO la sezione connessa piu' vicina all'apice
+    conn.SetExtractionModeToClosestPointRegion()
+    conn.SetClosestPoint(apex[0], apex[1], apex[2])
+    conn.Update()
+
+    # Compatta: rimuove i punti non usati -> centroide calcolato SOLO su questa sezione
+    cleaner = vtk.vtkCleanPolyData()
+    cleaner.SetInputConnection(conn.GetOutputPort())
+    cleaner.Update()
+    section = cleaner.GetOutput()
+    if section.GetNumberOfPoints() == 0:
+        raise RuntimeError("compute_inlet_from_top_slice: sezione vuota dopo la connettivita'.")
+
+    center_of_mass = vtk.vtkCenterOfMass()
+    center_of_mass.SetInputData(section)
+    center_of_mass.SetUseScalarsAsWeights(False)
+    center_of_mass.Update()
+
+    return list(center_of_mass.GetCenter())
+
+
+def auto_detect_endpoints(logic, preprocessed_polydata, inlet_point, patient_id):
+    """
+    Replica il pulsante 'Auto-detect' della GUI Extract Centerline (onAutoDetectEndPoints),
+    ma usando l'inlet calcolato come punto SORGENTE (seed) invece di un angolo arbitrario.
+
+    Il flusso reale della GUI e' in DUE passi (verificato sul sorgente VMTK):
+        network = logic.extractNetwork(preprocessed, endPointsNode)
+        positions = logic.getEndPoints(network, startPointPosition=...)
+    extractNetwork NON popola il nodo con gli endpoint: restituisce solo lo scheletro
+    e legge dal nodo l'eventuale punto sorgente. Gli endpoint si ottengono con getEndPoints.
+
+    Ritorna (source_position, outlet_positions):
+      - source_position: endpoint della rete piu' vicino all'inlet (tip dell'aorta prossimale)
+      - outlet_positions: tutti gli altri endpoint della rete (i cap di uscita)
+    """
+    # Nodo temporaneo con il solo inlet come SORGENTE.
+    # Convenzione Slicer: control point DESELEZIONATO = start point / source.
+    seed_node = slicer.mrmlScene.AddNewNodeByClass("vtkMRMLMarkupsFiducialNode", f"__seed_{patient_id}")
+    seed_node.CreateDefaultDisplayNodes()
+    seed_node.AddControlPoint(vtk.vtkVector3d(inlet_point[0], inlet_point[1], inlet_point[2]))
+    seed_node.SetNthControlPointSelected(0, False)
+
+    # 1) Estrazione rete (come extractNetwork del bottone): apre un foro alla sorgente e skeletonizza
+    network_polydata = logic.extractNetwork(preprocessed_polydata, seed_node)
+
+    # 2) Recupera la posizione della sorgente dal nodo (come fa la GUI)
+    start_index = logic.startPointIndexFromEndPointsMarkupsNode(seed_node)
+    start_position = [0.0, 0.0, 0.0]
+    seed_node.GetNthControlPointPosition(start_index, start_position)
+
+    # 3) getEndPoints ordina la SORGENTE per prima (endpoint di rete piu' vicino a start_position)
+    endpoint_positions = logic.getEndPoints(network_polydata, startPointPosition=start_position)
+
+    slicer.mrmlScene.RemoveNode(seed_node)
+
+    if len(endpoint_positions) < 2:
+        raise RuntimeError(
+            f"[{patient_id}] Auto-detect ha trovato solo {len(endpoint_positions)} endpoint "
+            f"(servono inlet + almeno 1 outlet). Verifica preprocess/superficie."
+        )
+
+    source_position = list(endpoint_positions[0])           # tip vicino all'inlet -> lo scartiamo
+    outlet_positions = [list(p) for p in endpoint_positions[1:]]  # gli altri = outlet
+
+    return source_position, outlet_positions
 
 def run_slicer_pipeline(patient_dir, flow_ext_length):
     patient_dir = os.path.abspath(patient_dir)
@@ -153,89 +277,61 @@ def run_slicer_pipeline(patient_dir, flow_ext_length):
     surface_polydata = input_model_node.GetPolyData()
     if surface_polydata is None:
         raise RuntimeError(f"[{patient_id}] Il modello caricato non contiene PolyData.")
+    # Snapshot pristino della superficie APERTA, prima di qualsiasi azione GUI/preprocessing.
+    # input_model_node viene modificato/cappato durante la sessione interattiva
+    # (le due 'can't reconstruct new profile' nel log vengono da lì).
+    original_surface = vtk.vtkPolyData()
+    original_surface.DeepCopy(surface_polydata)
+    n_open_original = len(extract_boundary_endpoints(original_surface))
+    print(f"[{patient_id}] Bordi aperti nella superficie caricata: {n_open_original}", flush=True)
+    
 
-    # --- 2. ESTRAZIONE AUTOMATICA ENDPOINTS ---
-    print(f"[{patient_id}] Estrazione automatica degli endpoints...", flush=True)
-    auto_endpoints = extract_boundary_endpoints(surface_polydata)
+# --- 2. ESTRAZIONE ENDPOINTS (equivalente al bottone 'Auto-detect' della GUI) ---
+    print(f"[{patient_id}] Calcolo automatico Source Point (Inlet) dalla sezione superiore...", flush=True)
+    inlet_point = compute_inlet_from_top_slice(surface_polydata, offset=2.0)
+    print(f"[{patient_id}] Inlet (centroide sezione piu' alta): "
+          f"({inlet_point[0]:.2f}, {inlet_point[1]:.2f}, {inlet_point[2]:.2f})", flush=True)
 
-    # Creazione nodo Markups Fiducial per Slicer
+    from ExtractCenterline import ExtractCenterlineLogic
+    logic = ExtractCenterlineLogic()
+
+    # Preprocess IDENTICO alla GUI (decimazione ~5000 pt, clean, triangolazione, normali).
+    # extractNetwork/getEndPoints DEVONO girare sulla superficie preprocessata, non sulla raw:
+    # sulla mesh piena la network extraction e' lentissima/instabile.
+    print(f"[{patient_id}] Preprocess superficie per estrazione rete (5000 pt, aggr. 4.0)...", flush=True)
+    preprocessed_polydata = logic.preprocess(surface_polydata, 5000, 4.0, False)
+
+    # Auto-detect reale: extractNetwork + getEndPoints, con l'inlet come seed sorgente.
+    print(f"[{patient_id}] Auto-detect endpoints (extractNetwork + getEndPoints)...", flush=True)
+    source_position, outlet_positions = auto_detect_endpoints(
+        logic, preprocessed_polydata, inlet_point, patient_id
+    )
+
+    # Sanity check: quanto dista il tip di rete abbinato dall'inlet calcolato?
+    d_src = sum((a - b) ** 2 for a, b in zip(source_position, inlet_point)) ** 0.5
+    print(f"[{patient_id}] Tip di rete piu' vicino all'inlet a {d_src:.2f} mm dal centroide.", flush=True)
+    if d_src > 15.0:
+        print(f"[WARN] [{patient_id}] Il tip inlet della rete e' lontano dal centroide "
+              f"({d_src:.2f} mm): controlla che la sezione superiore sia davvero l'inlet.", flush=True)
+
+    # Nodo finale: indice 0 = Inlet (centroide ESATTO, deselezionato = SORGENTE), poi gli Outlet.
     fiducial_node = slicer.mrmlScene.AddNewNodeByClass("vtkMRMLMarkupsFiducialNode", f"Endpoints_{patient_id}")
-    if hasattr(fiducial_node, "CreateDefaultDisplayNodes"):
-        fiducial_node.CreateDefaultDisplayNodes()
-    for pt in auto_endpoints:
-        try:
-            fiducial_node.AddControlPointWorld(pt)
-        except TypeError:
-            fiducial_node.AddControlPointWorld(pt[0], pt[1], pt[2])
-        except AttributeError:
-            fiducial_node.AddControlPoint(pt)
+    fiducial_node.CreateDefaultDisplayNodes()
 
-    # Assicura che il modulo ExtractCenterline sia selezionato per la verifica umana
-    try:
-        slicer.util.selectModule('ExtractCenterline')
-        extract_widget = slicer.modules.extractcenterline.widgetRepresentation().self()
-        if hasattr(extract_widget, 'show'):
-            extract_widget.show()
-        if hasattr(extract_widget, 'parameterNode'):
-            parameter_node = extract_widget.parameterNode()
-            if parameter_node is not None:
-                try:
-                    parameter_node.SetNodeReferenceID('InputSurface', input_model_node.GetID())
-                except Exception:
-                    pass
-                try:
-                    parameter_node.SetNodeReferenceID('EndPoints', fiducial_node.GetID())
-                except Exception:
-                    pass
-    except Exception:
-        pass
+    fiducial_node.AddControlPoint(vtk.vtkVector3d(inlet_point[0], inlet_point[1], inlet_point[2]))
+    fiducial_node.SetNthControlPointLabel(0, "Inlet")
+    fiducial_node.SetNthControlPointSelected(0, False)   # deselezionato => source per extractCenterline
 
-    # Configurazione vista 3D per l'operatore umano
-    slicer.util.resetThreeDViews()
-    
-    # --- 3. FASE INTERATTIVA (CORREZIONE MANUALE) ---
-    print("\n" + "=" * 60, flush=True)
-    print(f" INTERVENTO RICHIESTO: Correggi la posizione degli endpoints nella GUI.", flush=True)
-    print(f" Una volta terminato, clicca sul pulsante 'CONFERMA E CHIUDI GUI' nella barra in alto.", flush=True)
-    print("=" * 60 + "\n", flush=True)
+    for k, pt in enumerate(outlet_positions, start=1):
+        fiducial_node.AddControlPoint(vtk.vtkVector3d(pt[0], pt[1], pt[2]))
+        idx = fiducial_node.GetNumberOfControlPoints() - 1
+        fiducial_node.SetNthControlPointLabel(idx, f"Outlet_{k}")
+        fiducial_node.SetNthControlPointSelected(idx, True)  # selezionato => target
 
-    # Aggiunta pulsante di conferma personalizzato nell'interfaccia Slicer
-    dock_widget = qt.QDockWidget("CFD Pipeline - Revisione Endpoints")
-    layout = qt.QVBoxLayout()
-    button = qt.QPushButton("CONFERMA E CHIUDI GUI")
-    button.setStyleSheet("font-weight: bold; background-color: #28a745; color: white; padding: 10px; font-size: 14px;")
-    
-    # Definizione flag di completamento
-    user_finished = {"done": False}
-    event_loop = qt.QEventLoop()
-
-    def on_confirm():
-        # Salva Markups JSON
-        slicer.util.saveNode(fiducial_node, endpoints_json)
-        print(f"[{patient_id}] Endpoints salvati in: {endpoints_json}", flush=True)
-        user_finished["done"] = True
-        event_loop.quit()
-
-    try:
-        button.connect("clicked()", on_confirm)
-    except Exception:
-        button.clicked.connect(on_confirm)
-
-    layout.addWidget(button)
-    widget = qt.QWidget()
-    widget.setLayout(layout)
-    dock_widget.setWidget(widget)
-    slicer.util.mainWindow().addDockWidget(qt.Qt.TopDockWidgetArea, dock_widget)
-    dock_widget.show()
-    slicer.util.selectModule('ExtractCenterline')
-    slicer.app.processEvents()
-
-    # Blocco in ascolto finché l'utente non completa l'operazione interattiva
-    event_loop.exec_()
-
-    if not user_finished["done"]:
-        print(f"[{patient_id}] Chiusura senza conferma. Interruzione pipeline.")
-        sys.exit(1)
+    print(f"[{patient_id}] Completato: 1 Inlet + {len(outlet_positions)} Outlets identificati.", flush=True)
+    # --- 3. SALVATAGGIO AUTOMATICO SENZA INTERVENTO UMANO ---
+    slicer.util.saveNode(fiducial_node, endpoints_json)
+    print(f"[{patient_id}] Endpoints generati e salvati automaticamente in: {endpoints_json}", flush=True)
 
     # --- 4. ESTRAZIONE CENTERLINES & FLOW EXTENSIONS ---
     print(f"[{patient_id}] Calcolo Centerlines e applicazione Flow Extensions ({flow_ext_length} mm)...")
@@ -300,16 +396,35 @@ def run_slicer_pipeline(patient_dir, flow_ext_length):
         from ClipVessel import ClipVesselLogic
         clip_logic = ClipVesselLogic()
 
+        # lumen_tree_cfd.vtk e' CHIUSA (da segmentazione): il clip APRE i cap agli endpoint,
+        # poi estende, poi ri-cappa. Per questo serve clipVessel, non extendVessel diretto.
+        cleaner = vtk.vtkCleanPolyData(); cleaner.SetInputData(original_surface); cleaner.Update()
+        tri = vtk.vtkTriangleFilter(); tri.PassLinesOff(); tri.PassVertsOff()
+        tri.SetInputConnection(cleaner.GetOutputPort()); tri.Update()
+        surface_to_clip = tri.GetOutput()
+
+        print(f"[{patient_id}] Clip + flow extensions ({flow_ext_length} mm, BOUNDARY_NORMAL)...", flush=True)
         cap_flow_polydata = clip_logic.clipVessel(
-            surfacePolyData=surface_polydata,
+            surfacePolyData=surface_to_clip,
             centerlinesNode=centerline_model_node,
             clipPointsMarkupsNode=fiducial_node,
             cap=True,
             addFlowExtensions=True,
             extensionLength=flow_ext_length,
-            extensionMode="boundarynormal",
+            extensionMode="BOUNDARY_NORMAL",   # MAIUSCOLO: "boundarynormal" veniva ignorato
         )
 
+        # fail-loud 1: clipVessel disattiva SILENZIOSAMENTE cap+extension sui bordi non planari
+        failures = getattr(clip_logic, "lastPlanarityFailures", None)
+        if failures:
+            labels = ", ".join(f["label"] for f in failures)
+            raise RuntimeError(f"[{patient_id}] Bordi non planari: cap+flow ext SALTATI da ClipVessel: {labels}")
+
+        # fail-loud 2: dopo il capping finale il modello deve essere chiuso
+        n_open_after = len(extract_boundary_endpoints(cap_flow_polydata))
+        if n_open_after != 0:
+            raise RuntimeError(f"[{patient_id}] Modello finale con {n_open_after} bordi aperti: capping non riuscito.")
+        
         cap_model_node = slicer.mrmlScene.AddNewNodeByClass("vtkMRMLModelNode", f"CapSurface_{patient_id}")
         cap_model_node.SetAndObserveMesh(cap_flow_polydata)
         if parent_transform is not None:
