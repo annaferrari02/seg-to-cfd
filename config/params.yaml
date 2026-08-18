@@ -13,12 +13,10 @@ separation_angle: 50
 global_max_edge_size: 0.25
 quality_threshold: 400            # mesh_quality gate: fail if >= this
 max_geom_cm: 100            # paraview transform guard: fail if extent exceeds (mm not scaled)
-
+clip-offset: 3.0        #quanto indietro andare nel cut vessel (evitare flow extensions improprie)
 # Simulation
 mpi_ranks: 16
 
-# Where the World-2 scripts live
-sw_scripts_dir: /home/claude/seg-to-cfd/sw_scripts
 
 # How to launch each World-2 tool. Empty -> default to the current python (for stubs).
 # Production forms (fill on the workstation):

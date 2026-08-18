@@ -5,7 +5,7 @@ from pathlib import Path
 from .base import Adapter
 from .paraview import ParaViewAdapter
 from .slicer import SlicerInteractiveAdapter
-
+from .geometry import SvMatchAdapter
 
 # repo_root/steps  (stessa "risalita" che fa cli.py per config/)
 STEPS_DIR = Path(__file__).resolve().parents[3] / "steps"
@@ -48,8 +48,24 @@ def build_adapters(paths: dict, params: dict) -> dict[str, Adapter]:
             script=STEPS_DIR / "slicer" / "extract_tree_and_extensions.py",
             extensions_length=params.get("extensions_length", 25.0)
         ),
+        "sv_match": SvMatchAdapter(
+            stage="sv_match",
+            cap_faces="cap_faces.json",
+            endpoints="Endpoints_{patient}.mrk.json",
+            output="face_roles.json",
+            scale=params.get("scale", 0.1),
+            area_margin=params.get("area_margin", 1.3),
+            frame_margin=params.get("frame_margin", 1.3),
+        ),
+        "sv_apply": SimVascularAdapter(
+            stage="sv_apply",
+            script= STEPS_DIR / "simvascular" / "sv_apply.py",
+            input_filename="model.vtp",
+            outputs= {"faces_named": "faces_named.json"},
+            simvascular=paths["simvascular"],
+        ),
     }
-
+    
     if SimVascularAdapter is not None:
         adapters["sv_extract"] = SimVascularAdapter(
             stage="sv_extract",

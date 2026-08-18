@@ -8,8 +8,7 @@ stages:
   - {name: slicer,        type: auto, adapter: slicer}
   - {name: paraview,      type: auto,  adapter: paraview,    action: transform}
   - {name: sv_extract,    type: auto,  adapter: simvascular, action: extract}
-  - {name: tag_endpoints, type: auto,  adapter: tag}
-  - {name: sv_match,      type: gate,  adapter: sv_match}
+  - {name: sv_match,      type: gate,  adapter: geometry}
   - {name: sv_apply,      type: auto,  adapter: simvascular, action: apply}
   - {name: mesh_qc,       type: gate,  adapter: paraview,    action: quality}
   - {name: simulation,    type: async, adapter: simvascular, action: simulate}
