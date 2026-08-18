@@ -8,12 +8,5 @@
 .config/paths.yaml
 .vtp
 .vtk
-database/pz000/Endpoints_pz000.mrk.json
-database/pz000/lumen_tree_cfd_cap.vtk
-database/pz000/lumen_tree_cfd_clip_cm.vtk
-database/pz000/model.vtp
-database/pz000/slicer.log
-database/pz000/status.json
-database/pz000/sv_extract.log
-database/pz000/tree_model_pz000.vtk
-database/pz000/pz000_test/simvascular.proj
+
+database/
