@@ -182,7 +182,7 @@ def main():
     models_dir = os.path.join(proj_dir, "Models")
     vtp_out = os.path.join(models_dir, "{}.vtp".format(model_base_name))
     mdl_out = os.path.join(models_dir, "{}.mdl".format(model_base_name))
-    xml_out = os.path.join(models_dir, "{}.xml".format(model_base_name))
+    #xml_out = os.path.join(models_dir, "{}.xml".format(model_base_name))
 
     # Scrittura VTP
     writer = vtk.vtkXMLPolyDataWriter()
@@ -190,19 +190,29 @@ def main():
     writer.SetInputData(pd)
     writer.Write()
 
-    # Scrittura .mdl con unità di misura esplicite
+    # Scrittura .mdl con struttura nativa SV: model > timestep > model_element > faces
     mdl_lines = [
         '<?xml version="1.0" encoding="UTF-8" ?>',
-        '<format version="1.0" />',
-        '<model type="PolyData" units="cm">',  # <-- Aggiunto units="cm"
-        '    <faces>'
+        '<model type="PolyData" version="1.0">',
+        '    <timestep id="0">',
+        '        <model_element type="PolyData" num_sampling="0" use_uniform="0">',
+        '            <segmentations />',
+        '            <faces>',
     ]
     for fc in faces:
-        mdl_lines.append('        <face id="{}" name="{}" type="{}" />'.format(
-            fc["model_face_id"], fc["name"], fc["type"]
-        ))
-    mdl_lines.extend(['    </faces>', '</model>'])
-    
+        mdl_lines.append(
+            '                <face id="{}" name="{}" type="{}" '
+            'visible="true" opacity="1" color1="1" color2="1" color3="1" />'.format(
+                fc["model_face_id"], fc["name"], fc["type"]
+            )
+        )
+    mdl_lines += [
+        '            </faces>',
+        '            <blend_radii />',
+        '        </model_element>',
+        '    </timestep>',
+        '</model>',
+    ]
     with open(mdl_out, "w") as f:
         f.write("\n".join(mdl_lines))
 
@@ -216,8 +226,8 @@ def main():
         '    </model>',
         '</model_file>'
     ]
-    with open(xml_out, "w") as f:
-        f.write("\n".join(xml_lines))
+    #with open(xml_out, "w") as f:
+    #    f.write("\n".join(xml_lines))
 
     # 6) Validazione/Assegnazione facoltativa via sv.modeling (senza usare sv.project)
     try:

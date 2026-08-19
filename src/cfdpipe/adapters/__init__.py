@@ -37,8 +37,8 @@ def build_adapters(paths: dict, params: dict) -> dict[str, Adapter]:
             stage="mesh_qc",
             pvpython=paths["pvpython"],
             script=STEPS_DIR / "paraview" / "quality_check.py",
-            input_filename="{patient}.vtp",
-            output_filename="{patient}.vtp",
+            input_filename="cfd{patient}/Meshes/{patient}/{patient}.vtu",
+            output_filename="cfd{patient}/Meshes/{patient}/{patient}_qc.vtu",
             output_artifact_name="mesh_qc",
             extra_args=["--threshold", str(params.get("quality_threshold", 400))],
         ),
@@ -64,6 +64,23 @@ def build_adapters(paths: dict, params: dict) -> dict[str, Adapter]:
             outputs= {"faces_named": "faces_named.json"},
             simvascular=paths["simvascular"],
         ),
+        "sv_meshing": SimVascularAdapter(
+            stage="sv_meshing",
+            simvascular=paths["simvascular"],
+            script=STEPS_DIR / "simvascular" / "sv_meshing.py",
+            input_filename="cfd{patient}/Models/{patient}.vtp",
+            outputs={
+                "volume_mesh": "cfd{patient}/Meshes/{patient}/{patient}.vtu",
+                "mesh_info":   "mesh_info.json",
+            },
+            extra_args=[
+            "--gmes", str(params.get("gmes", params.get("global_max_edge_size", 0.25))),
+            "--bl", str(params.get("bl", True)).lower(),
+            "--portion-edge-size", str(params.get("portion_edge_size", 0.5)),
+            "--bl-num-layers", str(params.get("bl_num_layers", 2)),
+            "--bl-decreasing-ratio", str(params.get("bl_decreasing_ratio", 0.1)),
+        ]
+    ),
     }
     
     if SimVascularAdapter is not None:
@@ -76,7 +93,13 @@ def build_adapters(paths: dict, params: dict) -> dict[str, Adapter]:
                 "sv_model": "model.vtp",       # modello con ModelFaceID
                 "cap_faces": "cap_faces.json",  # consumato da sv_match
             },
-            extra_args=["--separation-angle", str(params.get("separation_angle", 50))],
+            extra_args=[
+            "--separation-angle", str(params.get("separation_angle", 50)),
+            "--remesh ",
+            "--remesh-hmin",  str(params.get("remesh_hmin", 0.05)),
+            "--remesh-hmax",  str(params.get("remesh_hmax", 0.05)),
+            "--remesh-hausd", str(params.get("remesh_hausd", 0.01)),
+        ],
         )
 
     return adapters
