@@ -71,15 +71,6 @@ def parse_args():
                         help="circolarita' minima per un cap (default 0.60).")
     parser.add_argument("--min-cap-area", type=float, default=DEFAULT_MIN_CAP_AREA,
                         help="area minima (cm^2) sotto cui la faccia e' una scheggia -> wall (default 0.01).")
-    parser.add_argument("--remesh", dest="remesh", action="store_true", default=True,
-                        help="ri-triangola la superficie prima delle facce (default on).")
-    parser.add_argument("--no-remesh", dest="remesh", action="store_false",
-                        help="disattiva il remesh di pulizia.")
-    parser.add_argument("--remesh-hmin", type=float, default=0.05, help="edge size min MMG (cm).")
-    parser.add_argument("--remesh-hmax", type=float, default=0.05, help="edge size max MMG (cm).")
-    parser.add_argument("--remesh-angle", type=float, default=60.0, help="feature angle (preserva i rim dei cap).")
-    parser.add_argument("--remesh-hgrad", type=float, default=1.1, help="gradazione MMG.")
-    parser.add_argument("--remesh-hausd", type=float, default=0.01, help="distanza di Hausdorff MMG (cm).")
 
     # SimVascular puo' anteporre argomenti propri: tieni solo cio' che segue "--".
     argv = sys.argv[1:]
@@ -159,46 +150,6 @@ def read_surface(path):
         pd.GetPointData().GetNormals() is not None), flush=True)
 
     return pd
-
-def _surface_topology(pd):
-    """(free_edges, non_manifold_edges). Superficie CFD valida = (0, 0)."""
-    def _cnt(setter):
-        fe = vtk.vtkFeatureEdges(); fe.SetInputData(pd)
-        fe.BoundaryEdgesOff(); fe.NonManifoldEdgesOff()
-        fe.FeatureEdgesOff(); fe.ManifoldEdgesOff()
-        setter(fe); fe.Update(); return fe.GetOutput().GetNumberOfCells()
-    return _cnt(lambda f: f.BoundaryEdgesOn()), _cnt(lambda f: f.NonManifoldEdgesOn())
-
-
-def remesh_surface(pd, args):
-    """Ri-triangola la superficie a taglia (quasi) uniforme: l'equivalente del
-    Remesh nel modulo Model della GUI. Toglie i triangoli-ago degeneri che l'MMG
-    INTERNO del mesher non riesce a coarsare. Deve girare PRIMA di
-    compute_boundary_faces, cosi' i ModelFaceID nascono su superficie pulita."""
-    before = pd.GetNumberOfCells()
-    try:
-        out = sv.mesh_utils.remesh(
-            pd, hmin=args.remesh_hmin, hmax=args.remesh_hmax,
-            angle=args.remesh_angle, hgrad=args.remesh_hgrad, hausd=args.remesh_hausd,
-        )
-    except Exception as exc:
-        raise RuntimeError("sv.mesh_utils.remesh fallito (hmin={} hmax={} hausd={}): {}".format(
-            args.remesh_hmin, args.remesh_hmax, args.remesh_hausd, exc))
-
-    # Normali coerenti dopo la ri-triangolazione (stesso condizionamento di read_surface).
-    n = vtk.vtkPolyDataNormals(); n.SetInputData(out)
-    n.SplittingOff(); n.ConsistencyOn(); n.AutoOrientNormalsOn()
-    n.ComputeCellNormalsOn(); n.ComputePointNormalsOn(); n.NonManifoldTraversalOff()
-    n.Update(); out = n.GetOutput()
-
-    # Guardia fail-loud: il remesh NON deve bucare ne' rendere non-manifold.
-    free, nonman = _surface_topology(out)
-    if free > 0 or nonman > 0:
-        raise RuntimeError("remesh ha rotto la superficie: free={} non_manifold={} "
-                           "(alza --remesh-hausd o --remesh-hmin/hmax).".format(free, nonman))
-    print("[DEBUG] remesh: {} -> {} triangoli (free=0 non_manifold=0)".format(
-        before, out.GetNumberOfCells()), flush=True)
-    return out
 
 def _used_points(face_pd):
     """Punti REALMENTE usati dalla faccia. get_face_polydata porta con se' il
@@ -305,13 +256,6 @@ def main():
     except Exception as exc:
         return _die(str(exc))
 
-    if args.remesh:
-        try:
-            surface = remesh_surface(surface, args)
-            print("[DEBUG] REMESH OK", flush=True)
-        except Exception as exc:
-            traceback.print_exc(file=sys.stderr)
-            return _die(str(exc))
 
     # Scrivi un .vtp temporaneo e fallo RILEGGERE a SimVascular col reader nativo:
     # e' cio' che fa la GUI (importa un FILE). Modeler.read inizializza il modello

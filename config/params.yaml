@@ -11,9 +11,9 @@ max_snap_dist_mm: 5.0       # tag_endpoints frame-mismatch guard
 # SimVascular / meshing
 separation_angle: 50
 # extract_faces : remesh di pulizia 
-remesh_hmin: 0.05
-remesh_hmax: 0.05
-remesh_hausd: 0.01
+remesh_hmin: 0.02
+remesh_hmax: 0.25
+remesh_hausd: 0.005
 
 quality_threshold: 400            # mesh_quality gate: fail if >= this
 max_geom_cm: 100            # paraview transform guard: fail if extent exceeds (mm not scaled)

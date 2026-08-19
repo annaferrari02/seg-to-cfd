@@ -95,10 +95,6 @@ def build_adapters(paths: dict, params: dict) -> dict[str, Adapter]:
             },
             extra_args=[
             "--separation-angle", str(params.get("separation_angle", 50)),
-            "--remesh ",
-            "--remesh-hmin",  str(params.get("remesh_hmin", 0.05)),
-            "--remesh-hmax",  str(params.get("remesh_hmax", 0.05)),
-            "--remesh-hausd", str(params.get("remesh_hausd", 0.01)),
         ],
         )
 

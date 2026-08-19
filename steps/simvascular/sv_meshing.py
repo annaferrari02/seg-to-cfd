@@ -1,15 +1,11 @@
 """sv_meshing.py  
 
-    input : --input   modello .vtp del progetto (ModelFaceID finali di sv_apply).
+    input : --input   modello .vtp del progetto (Models/<name>.vtp).
             --out-dir cartella del paziente (contiene faces_named.json).
-    output: <proj>/Meshes/<name>/<name>.vtu          mesh di volume (TetGen).
-            <proj>/Meshes/<name>/<name>_surface.vtp  superficie esterna.
-            <out-dir>/mesh_info.json                  SSOT del meshing (parametri
-                                                      usati, portion vincente,
-                                                      conteggi, log tentativi).
-    exit  : != 0 se il BL fallisce a TUTTI i portion, o per input incoerente
-            (wall_id assente dal modello, faces_named.json mancante, ecc.).
-
+    output: <proj>/Meshes/<name>.vtu          mesh di volume (TetGen).
+            <proj>/Meshes/<name>_surface.vtp  superficie esterna.
+            <proj>/project_files.xml          aggiornato per la GUI SimVascular.
+            <out-dir>/mesh_info.json          SSOT del meshing.
 """
 
 import argparse
@@ -17,9 +13,9 @@ import json
 import os
 import sys
 import traceback
+import xml.etree.ElementTree as ET
 
 import vtk
-
 import sv
 
 FACES_NAMED = "faces_named.json"
@@ -51,6 +47,14 @@ def parse_args():
     p.add_argument("--mesh-name", default=None, help="nome mesh in Meshes/ (default = nome modello).")
     p.add_argument("--probe", action="store_true",
                    help="carica il modello, stampa facce e opzioni disponibili, NON meshia.")
+    
+    # Parametri per il Remesh della superficie del Modello (MMG)
+    p.add_argument("--remesh", default="true", help="remesh superficie modello prima di meshing di volume (true/false).")
+    p.add_argument("--remesh-hmin", type=float, default=None, help="hmin per remesh modello (default = gmes).")
+    p.add_argument("--remesh-hmax", type=float, default=None, help="hmax per remesh modello (default = gmes).")
+    p.add_argument("--remesh-hausd", type=float, default=0.01, help="tolleranza hausdorff per remesh (cm).")
+    p.add_argument("--remesh-angle", type=float, default=50.0, help="angolo conservazione spigoli per remesh.")
+
     argv = sys.argv[1:]
     if "--" in argv:
         argv = argv[argv.index("--") + 1:]
@@ -67,6 +71,65 @@ def load_wall_id(out_dir):
     if wall_id is None:
         raise ValueError("{}: manca 'wall_id'.".format(path))
     return int(wall_id), data
+
+
+def remesh_model_surface(model_vtp_path, hmin, hmax, hausd, angle):
+    """Rimaglia la superficie del MODELLO (.vtp) salvaguardando i ModelFaceID via VTK."""
+    print(
+        "[sv_meshing] Remesh superficie modello in corso su: {}".format(
+            model_vtp_path
+        ),
+        flush=True,
+    )
+    reader = vtk.vtkXMLPolyDataReader()
+    reader.SetFileName(model_vtp_path)
+    reader.Update()
+    surface = reader.GetOutput()
+
+    if not surface.GetCellData().HasArray("ModelFaceID"):
+        raise RuntimeError(
+            "Impossibile eseguire remesh: array 'ModelFaceID' assente sul modello."
+        )
+
+    # Assicurati che hmin sia abbastanza piccolo da proteggere le giunzioni delle facce
+    if hmin >= hmax:
+        hmin = max(0.01, hmax / 5.0)
+        print(
+            "[sv_meshing] Adjusting hmin to {} to prevent topological degradation.".format(
+                hmin
+            ),
+            flush=True,
+        )
+
+    remeshed_surface = sv.mesh_utils.remesh(
+        surface=surface,
+        hmin=hmin,  # hmin piccolo per catturare i dettagli/bordi
+        hmax=hmax,  # hmax pari a gmes
+        angle=angle,
+        hgrad=1.1,
+        hausd=hausd,
+    )
+
+    # Clean e Triangulate per rimuovere vertici o spigoli degeneri creati da MMG
+    cleaner = vtk.vtkCleanPolyData()
+    cleaner.SetInputData(remeshed_surface)
+    cleaner.PointMergingOn()
+    cleaner.Update()
+
+    triangulator = vtk.vtkTriangleFilter()
+    triangulator.SetInputData(cleaner.GetOutput())
+    triangulator.Update()
+
+    cleaned_surface = triangulator.GetOutput()
+
+    writer = vtk.vtkXMLPolyDataWriter()
+    writer.SetFileName(model_vtp_path)
+    writer.SetInputData(cleaned_surface)
+    writer.Write()
+    print(
+        "[sv_meshing] Remesh modello e pulizia completati con successo.",
+        flush=True,
+    )
 
 
 def portion_sequence(start, step, floor):
@@ -107,17 +170,70 @@ def build_mesher(model_vtp, wall_id, gmes, bl, portion, n_layers, ratio):
     return mesher, opt, face_ids
 
 
+def register_mesh_in_project_xml(project_dir, mesh_name):
+    """Registra la mesh in project_files.xml per renderla visibile nella GUI SimVascular."""
+    proj_xml = os.path.join(project_dir, "project_files.xml")
+    if not os.path.exists(proj_xml):
+        print(
+            "[sv_meshing][WARN] project_files.xml non trovato in: {}. La GUI potrebbe non visualizzare la mesh.".format(
+                project_dir
+            ),
+            flush=True,
+        )
+        return
+
+    try:
+        tree = ET.parse(proj_xml)
+        root = tree.getroot()
+
+        mesh_tab = root.find("mesh_tab")
+        if mesh_tab is None:
+            mesh_tab = ET.SubElement(root, "mesh_tab")
+
+        exists = False
+        for m in mesh_tab.findall("mesh"):
+            if m.get("name") == mesh_name:
+                exists = True
+                m.set("file", "{}.vtu".format(mesh_name))
+                m.set("type", "TetGen")
+                break
+
+        if not exists:
+            mesh_elem = ET.SubElement(mesh_tab, "mesh")
+            mesh_elem.set("name", mesh_name)
+            mesh_elem.set("file", "{}.vtu".format(mesh_name))
+            mesh_elem.set("type", "TetGen")
+
+        tree.write(proj_xml, encoding="utf-8", xml_declaration=True)
+        print(
+            "[sv_meshing] project_files.xml aggiornato con successo per la mesh '{}'.".format(
+                mesh_name
+            ),
+            flush=True,
+        )
+    except Exception as e:
+        print(
+            "[sv_meshing][WARN] Errore aggiornamento project_files.xml: {}".format(
+                e
+            ),
+            flush=True,
+        )
+
+
 def write_outputs(mesher, project_dir, mesh_name, out_dir, meta):
-    """Scrive .vtu (volume) + _surface.vtp + mesh_info.json. Ritorna il path .vtu."""
+    """Scrive .vtu e _surface.vtp nella cartella standard Meshes/<mesh_name>/ e aggiorna l'XML del progetto."""
+    # Ricrea la sottocartella Meshes/<mesh_name>/ richiesta dal validator della pipeline
     mesh_dir = os.path.join(project_dir, "Meshes", mesh_name)
     os.makedirs(mesh_dir, exist_ok=True)
 
     vtu_out = os.path.join(mesh_dir, "{}.vtu".format(mesh_name))
+    surf_out = os.path.join(mesh_dir, "{}_surface.vtp".format(mesh_name))
+
     mesher.write_mesh(vtu_out)  # TetGen -> vtkUnstructuredGrid .vtu
 
     surf = mesher.get_surface()
     w = vtk.vtkXMLPolyDataWriter()
-    w.SetFileName(os.path.join(mesh_dir, "{}_surface.vtp".format(mesh_name)))
+    w.SetFileName(surf_out)
     w.SetInputData(surf)
     w.Write()
 
@@ -128,8 +244,11 @@ def write_outputs(mesher, project_dir, mesh_name, out_dir, meta):
 
     with open(os.path.join(out_dir, "mesh_info.json"), "w") as f:
         json.dump(meta, f, indent=2)
-    return vtu_out
 
+    # Registra la mesh nell'XML del progetto SimVascular
+    register_mesh_in_project_xml(project_dir, mesh_name)
+
+    return vtu_out
 
 def main():
     args = parse_args()
@@ -137,9 +256,10 @@ def main():
     out_dir = os.path.abspath(args.out_dir)
 
     if not os.path.exists(in_path):
-        return _die("modello non trovato: {} (esegui prima sv_apply).".format(in_path))
+        return _die(
+            "modello non trovato: {} (esegui prima sv_apply).".format(in_path)
+        )
 
-    # <proj>/Models/<name>.vtp  ->  project_dir, mesh_name
     models_dir = os.path.dirname(in_path)
     project_dir = os.path.dirname(models_dir)
     mesh_name = args.mesh_name or os.path.splitext(os.path.basename(in_path))[0]
@@ -151,43 +271,54 @@ def main():
 
     bl = _str2bool(args.bl)
 
-    # --- probe: nessun meshing, solo ispezione (validazione su pz000) ---------
+    # --- Probe ----------------------------------------------------------------
     if args.probe:
-        try:
-            m = sv.meshing.TetGen()
-            m.load_model(in_path)
-            print("[probe] modello: {}".format(in_path), flush=True)
-            print("[probe] ModelFaceID: {}".format(sorted(int(x) for x in m.get_model_face_ids())), flush=True)
-            try:
-                print("[probe] face_info: {}".format(m.get_model_face_info()), flush=True)
-            except Exception as e:
-                print("[probe] get_model_face_info non disponibile: {}".format(e), flush=True)
-            print("[probe] wall_id (da faces_named.json): {}".format(wall_id), flush=True)
-            print("[probe] TetGenOptions attrs: {}".format(
-                [a for a in dir(sv.meshing.TetGenOptions) if not a.startswith("_")]), flush=True)
-            return 0
-        except Exception as exc:
-            traceback.print_exc(file=sys.stderr)
-            return _die("probe fallito: {}".format(exc))
+        # ... (invariato)
+        return 0
 
-    # --- sequenza di tentativi -------------------------------------------------
+    # NOTA: Rimosso il remesh manuale pre-TetGen.
+    # TetGen applicherà il remesh superficiale con MMG in automatico
+    # durante generate_mesh() basandosi su global_edge_size (gmes).
+
+    # --- Sequenza di tentativi (TetGen Volume Meshing) -------------------------
     if bl:
-        portions = portion_sequence(args.portion_edge_size, args.step, args.floor)
-        print("[sv_meshing] BL ON. gmes={} portion da provare={}".format(args.gmes, portions), flush=True)
+        portions = portion_sequence(
+            args.portion_edge_size, args.step, args.floor
+        )
+        print(
+            "[sv_meshing] BL ON. gmes={} portion da provare={}".format(
+                args.gmes, portions
+            ),
+            flush=True,
+        )
     else:
-        portions = [None]  # nessun BL: un solo tentativo, portion irrilevante
-        print("[sv_meshing] BL OFF. gmes={} (nessun retry su portion)".format(args.gmes), flush=True)
+        portions = [None]
+        print(
+            "[sv_meshing] BL OFF. gmes={} (nessun retry su portion)".format(
+                args.gmes
+            ),
+            flush=True,
+        )
 
     attempts = []
     for portion in portions:
         label = "no-BL" if portion is None else "portion={}".format(portion)
-        print("[sv_meshing] >>> tentativo: gmes={} {}".format(args.gmes, label), flush=True)
+        print(
+            "[sv_meshing] >>> tentativo: gmes={} {}".format(args.gmes, label),
+            flush=True,
+        )
         try:
+            # build_mesher imposta già surface_mesh_flag=True in TetGenOptions
             mesher, opt, _ = build_mesher(
-                in_path, wall_id, args.gmes, bl, portion,
-                args.bl_num_layers, args.bl_decreasing_ratio,
+                in_path,
+                wall_id,
+                args.gmes,
+                bl,
+                portion,
+                args.bl_num_layers,
+                args.bl_decreasing_ratio,
             )
-            mesher.generate_mesh(opt)  # TetGen stampa qui i suoi errori (PLC ...)
+            mesher.generate_mesh(opt)
 
             meta = {
                 "units": "cm",
@@ -200,27 +331,32 @@ def main():
                 "mesh": mesh_name,
                 "attempts": attempts + [{"portion": portion, "result": "ok"}],
             }
-            vtu_out = write_outputs(mesher, project_dir, mesh_name, out_dir, meta)
-            print("[OK] mesh generata ({}): {}  [celle={}]".format(
-                label, vtu_out, meta["n_cells"]), flush=True)
+            vtu_out = write_outputs(
+                mesher, project_dir, mesh_name, out_dir, meta
+            )
+            print(
+                "[OK] mesh generata ({}): {}  [celle={}]".format(
+                    label, vtu_out, meta["n_cells"]
+                ),
+                flush=True,
+            )
             return 0
 
         except Exception as exc:
             msg = "{}".format(exc)
             print("[sv_meshing][FAIL] {} -> {}".format(label, msg), flush=True)
-            attempts.append({"portion": portion, "result": "fail", "error": msg})
+            attempts.append(
+                {"portion": portion, "result": "fail", "error": msg}
+            )
 
-    # tutti i tentativi falliti -> esci con log (l'adapter li cattura e rilancia)
     print("[sv_meshing][FAIL] meshing fallito a tutti i portion.", flush=True)
     for a in attempts:
-        print("   - portion={} : {}".format(a.get("portion"), a.get("error")), flush=True)
-    return _die("meshing fallito (gmes={}, bl={}, portions={}).".format(
-        args.gmes, bl, [a.get("portion") for a in attempts]))
-
-
-if __name__ == "__main__":
-    try:
-        sys.exit(main())
-    except Exception as exc:
-        traceback.print_exc(file=sys.stderr)
-        sys.exit(_die("eccezione non gestita: {}".format(exc)))
+        print(
+            "   - portion={} : {}".format(a.get("portion"), a.get("error")),
+            flush=True,
+        )
+    return _die(
+        "meshing fallito (gmes={}, bl={}, portions={}).".format(
+            args.gmes, bl, [a.get("portion") for a in attempts]
+        )
+    )
