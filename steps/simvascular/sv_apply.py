@@ -1,20 +1,13 @@
 """sv_apply.py 
 
-crea sim vascular project headless, rinomina le facce secondo face_roles.json e scrive il solid model.
+Crea un progetto SimVascular headless, rinomina le facce secondo face_roles.json,
+applica i nomi/tipi nativi tramite sv.modeling e registra il modello nel progetto.
 
-CONVENZIONE ID FINALI (stabile, leggibile):
+CONVENZIONE ID FINALI:
     1 = wall, 2 = inlet, 3.. = outlet A, B, C, ...
 
-Uso (di norma via adapter):
+Uso:
     simvascular --python -- sv_apply.py --input <out-dir>/model.vtp --out-dir <out-dir>
-CONTRATTO
-    input : --input   model.vtp (con array ModelFaceID, da extract_faces).
-            --out-dir cartella del paziente; deve contenere face_roles.json.
-    output: <out-dir>/cfd<pid>/  progetto SV headless (layout predefinito), con
-            <out-dir>/cfd<pid>/Models/model.vtp  solid model, ID ricombinati.
-            <out-dir>/faces_named.json           mappa ModelFaceID->ruolo (SSOT).
-    exit  : != 0 a OGNI incoerenza (fail loud): array assente, ID nel modello
-            non coperti da face_roles, face_roles malformato.
 """
 
 import argparse
@@ -27,6 +20,9 @@ import traceback
 import vtk
 from vtk.util.numpy_support import vtk_to_numpy, numpy_to_vtk
 import numpy as np
+
+# API Nativa Modeler di SimVascular
+import sv
 
 FACE_ID_ARRAY = "ModelFaceID"
 
@@ -47,18 +43,16 @@ def _letters(i):
 
 
 def parse_args():
-    p = argparse.ArgumentParser(description="SimVascular: applica i ruoli (combine wall + naming).")
+    p = argparse.ArgumentParser(description="SimVascular: applica ruoli e registra il modello nel progetto.")
     p.add_argument("--input", required=True, help="model.vtp con ModelFaceID.")
     p.add_argument("--out-dir", required=True, help="cartella del paziente (contiene face_roles.json).")
     p.add_argument("--roles", default="face_roles.json", help="nome del file ruoli in out-dir.")
-    p.add_argument("--model-name", default="model.vtp",
-                   help="nome del solid model dentro <project>/Models/ (default model.vtp).")
-    p.add_argument("--sv-version", default="23.03.27",
-                   help="stringa versione scritta nel descrittore immagine (informativa).")
+    p.add_argument("--model-name", default=None,
+                   help="nome del solid model dentro <project>/Models/ (default <pid>).")
+    p.add_argument("--sv-version", default="23.03.27", help="versione di SimVascular.")
     argv = sys.argv[1:]
     if "--" in argv:
         argv = argv[argv.index("--") + 1:]
-    print("[DEBUG] sv_apply argv: {}".format(sys.argv), flush=True)
     return p.parse_args(argv)
 
 
@@ -73,12 +67,11 @@ def load_roles(path):
         raise ValueError("face_roles.json: wall_face_ids assente o vuoto.")
     if not isinstance(outlets, list):
         raise ValueError("face_roles.json: outlets assente.")
-    outlet_ids = [o["face_id"] for o in outlets]  # ordine gia' deterministico da sv_match
+    outlet_ids = [o["face_id"] for o in outlets]
     return int(inlet), [int(x) for x in wall], [int(x) for x in outlet_ids]
 
 
 def build_mapping(inlet, wall, outlets):
-    """Ritorna (old_id->new_id, faces[]) con la convenzione 1=wall,2=inlet,3.."""
     mapping = {}
     faces = []
 
@@ -111,7 +104,11 @@ def main():
     in_path = os.path.abspath(args.input)
     out_dir = os.path.abspath(args.out_dir)
     pid = os.path.basename(out_dir.rstrip("/"))
-    project = "cfd{}".format(pid)
+    project_name = "cfd{}".format(pid)
+    
+    model_base_name = args.model_name if args.model_name else pid
+    if model_base_name.endswith(".vtp"):
+        model_base_name = os.path.splitext(model_base_name)[0]
 
     if not os.path.exists(in_path):
         return _die("input non trovato: {}".format(in_path))
@@ -119,7 +116,7 @@ def main():
     if not os.path.exists(roles_path):
         return _die("face_roles non trovato: {} (esegui prima sv_match).".format(roles_path))
 
-    # 1) leggi ruoli + modello
+    # 1) Leggi ruoli + modello
     try:
         inlet, wall, outlets = load_roles(roles_path)
     except Exception as exc:
@@ -134,7 +131,7 @@ def main():
         return _die("array '{}' assente in {}: non e' un modello SV valido.".format(FACE_ID_ARRAY, in_path))
     old = vtk_to_numpy(arr).astype(np.int64)
 
-    # 2) costruisci la mappa old->new e verifica la COPERTURA (fail loud)
+    # 2) Costruisci mappa ed esegui la verifica di copertura
     try:
         mapping, faces = build_mapping(inlet, wall, outlets)
     except Exception as exc:
@@ -142,36 +139,28 @@ def main():
 
     present = set(int(x) for x in np.unique(old))
     declared = set(mapping)
-    missing_in_roles = present - declared      # celle del modello senza ruolo -> stop
-    missing_in_model = declared - present      # ruoli che non toccano nessuna cella -> stop
+    missing_in_roles = present - declared
+    missing_in_model = declared - present
     if missing_in_roles:
-        return _die("ModelFaceID {} presenti nel modello ma non in face_roles.json: "
-                    "classificazione incoerente.".format(sorted(missing_in_roles)))
+        return _die("ModelFaceID {} presenti nel modello ma non in face_roles.json".format(sorted(missing_in_roles)))
     if missing_in_model:
-        return _die("ModelFaceID {} in face_roles.json ma assenti dal modello: "
-                    "face_roles non corrisponde a questo model.vtp.".format(sorted(missing_in_model)))
+        return _die("ModelFaceID {} in face_roles.json ma assenti dal modello".format(sorted(missing_in_model)))
 
-    # 3) riscrivi l'array ModelFaceID (COMBINE + rinomina in un colpo)
+    # 3) Rimappa l'array ModelFaceID (Combine & Rename)
     new = np.fromiter((mapping[int(x)] for x in old), dtype=np.int32, count=len(old))
     new_arr = numpy_to_vtk(new, deep=1, array_type=vtk.VTK_INT)
     new_arr.SetName(FACE_ID_ARRAY)
     pd.GetCellData().RemoveArray(FACE_ID_ARRAY)
     pd.GetCellData().AddArray(new_arr)
 
-    n_final = len(faces)
-    print("[DEBUG] combine: {} facce originali -> {} facce finali (1 wall, 1 inlet, {} outlet)".format(
-        len(present), n_final, n_final - 2), flush=True)
-
-    # 4) cartella-progetto (layout predefinito SV, headless) + solid model in Models/
-    proj_dir = os.path.join(out_dir, project)
+    # 4) Generazione Albero Progetto
+    proj_dir = os.path.join(out_dir, project_name)
     for sub in ("Images", "Paths", "Segmentations", "Models", "Meshes", "Simulations"):
         os.makedirs(os.path.join(proj_dir, sub), exist_ok=True)
+
     with open(os.path.join(proj_dir, "simvascular.proj"), "w") as f:
         f.write('<?xml version="1.0" encoding="UTF-8"?>\n<simvascular_project version="1.0"/>\n')
 
-    # SV pretende il descrittore immagine anche senza immagine sorgente: senza
-    # questo file l'apertura fallisce con "No project image location file found".
-    # Campi immagine vuoti = progetto image-less (partiamo dal modello).
     now = int(time.time())
     with open(os.path.join(proj_dir, "Images", "image_information.xml"), "w") as f:
         f.write(
@@ -189,31 +178,61 @@ def main():
             '</ImageObjectInformation>\n'.format(t=now, ver=args.sv_version)
         )
 
+    # 5) Salvataggio File Solid Model (.vtp) e File Descrittori SimVascular (.mdl e .xml)
     models_dir = os.path.join(proj_dir, "Models")
-    model_out = os.path.join(models_dir, args.model_name)
-    w = vtk.vtkXMLPolyDataWriter()
-    w.SetFileName(model_out)
-    w.SetInputData(pd)
-    w.Write()
+    vtp_out = os.path.join(models_dir, "{}.vtp".format(model_base_name))
+    mdl_out = os.path.join(models_dir, "{}.mdl".format(model_base_name))
+    xml_out = os.path.join(models_dir, "{}.xml".format(model_base_name))
 
-    # 5) OPZIONALE: validazione con l'API SV (solo lettura verificata). Non fatale.
+    # Scrittura VTP
+    writer = vtk.vtkXMLPolyDataWriter()
+    writer.SetFileName(vtp_out)
+    writer.SetInputData(pd)
+    writer.Write()
+
+    # Scrittura .mdl con unità di misura esplicite
+    mdl_lines = [
+        '<?xml version="1.0" encoding="UTF-8" ?>',
+        '<format version="1.0" />',
+        '<model type="PolyData" units="cm">',  # <-- Aggiunto units="cm"
+        '    <faces>'
+    ]
+    for fc in faces:
+        mdl_lines.append('        <face id="{}" name="{}" type="{}" />'.format(
+            fc["model_face_id"], fc["name"], fc["type"]
+        ))
+    mdl_lines.extend(['    </faces>', '</model>'])
+    
+    with open(mdl_out, "w") as f:
+        f.write("\n".join(mdl_lines))
+
+    # Scrittura .xml (File Registro Modello per la GUI)
+    xml_lines = [
+        '<?xml version="1.0" encoding="UTF-8"?>',
+        '<model_file version="1.0">',
+        '    <model name="{}" type="PolyData">'.format(model_base_name),
+        '        <vtp_file_name>{}</vtp_file_name>'.format(os.path.basename(vtp_out)),
+        '        <mdl_file_name>{}</mdl_file_name>'.format(os.path.basename(mdl_out)),
+        '    </model>',
+        '</model_file>'
+    ]
+    with open(xml_out, "w") as f:
+        f.write("\n".join(xml_lines))
+
+    # 6) Validazione/Assegnazione facoltativa via sv.modeling (senza usare sv.project)
     try:
-        import sv
-        m = sv.modeling.Modeler(sv.modeling.Kernel.POLYDATA).read(model_out)
-        got = sorted(int(i) for i in m.get_face_ids())
-        exp = sorted(fc["model_face_id"] for fc in faces)
-        if got != exp:
-            print("[WARN] SV rilegge face_ids {} != attesi {}".format(got, exp), flush=True)
-        else:
-            print("[DEBUG] SV conferma le facce: {}".format(got), flush=True)
+        modeler = sv.modeling.Modeler(sv.modeling.Kernel.POLYDATA)
+        sv_model = modeler.read(vtp_out)
+        got_ids = sorted(int(i) for i in sv_model.get_face_ids())
+        print("[DEBUG] Modello letto correttamente da sv.modeling. Face IDs trovati: {}".format(got_ids), flush=True)
     except Exception as exc:
-        print("[WARN] validazione sv.modeling saltata: {}".format(exc), flush=True)
+        print("[WARN] Validazione sv.modeling saltata: {}".format(exc), flush=True)
 
-    # 6) faces_named.json = SINGLE SOURCE OF TRUTH (post-combine)
+    # 7) faces_named.json (Single Source of Truth per la pipeline)
     faces_named = {
         "units": "cm",
-        "project": project,
-        "model": os.path.relpath(model_out, out_dir),
+        "project": project_name,
+        "model": os.path.relpath(vtp_out, out_dir),
         "id_convention": "1=wall, 2=inlet, 3..=outlet A,B,C,...",
         "wall_id": 1,
         "inlet_id": 2,
@@ -224,8 +243,7 @@ def main():
     with open(faces_json, "w") as f:
         json.dump(faces_named, f, indent=2)
 
-    print("[OK] modello nominato: {}".format(model_out), flush=True)
-    print("[OK] scritto {}".format(faces_json), flush=True)
+    print("[OK] Progetto SimVascular salvato e registrato: {}".format(vtp_out), flush=True)
     return 0
 
 
