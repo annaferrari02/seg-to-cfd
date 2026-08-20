@@ -64,9 +64,11 @@ class Patient:
         """Crea il ledger per un pz nuovo. """
         if self.has_status():
             return self.load_status()
-        if not self.input_vtk.exists():
+        # Allow either a precomputed lumen VTK (legacy) or a Combined.seg.nrrd
+        combined_seg = self.root / "Combined.seg.nrrd"
+        if not (self.input_vtk.exists() or combined_seg.exists()):
             raise FileNotFoundError(
-                f"{self.id}: manca l'input {INPUT_FILENAME} in {self.root}"
+                f"{self.id}: manca l'input {INPUT_FILENAME} o Combined.seg.nrrd in {self.root}"
             )
         ts = now()
         st = PatientStatus(

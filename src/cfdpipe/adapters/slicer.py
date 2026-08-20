@@ -2,6 +2,8 @@
 import subprocess
 from pathlib import Path
 from .base import Adapter
+import subprocess
+from typing import Optional
 
 class SlicerInteractiveAdapter(Adapter):
     def __init__(self, stage: str, slicer_bin: str, script: Path, extensions_length: float):
@@ -95,3 +97,76 @@ class SlicerInteractiveAdapter(Adapter):
             raise FileNotFoundError(f"Artifacts mancanti per {patient.id}: {status_report}")
 
         return artifacts
+
+
+class SlicerConversionAdapter(Adapter):
+    """Adapter minimale per eseguire un piccolo script Slicer che converte
+    `Combined.seg.nrrd` -> `lumen_tree_cfd.vtk`.
+    """
+    def __init__(self, stage: str, slicer_bin: str, script: Path, output_filename: str = "lumen_tree_cfd.vtk"):
+        self.stage = stage
+        self.slicer_bin = slicer_bin
+        self.script = script
+        self.output_filename = output_filename
+
+    def preconditions(self, patient) -> None:
+        # Verify slicer binary and script exist and input segmentation is present
+        input_file = Path(patient.path.resolve()) / "Combined.seg.nrrd"
+        if not input_file.exists():
+            raise FileNotFoundError(f"Input segmentation non trovato: {input_file}")
+        if not Path(self.slicer_bin).exists():
+            raise FileNotFoundError(f"Slicer non trovato: {self.slicer_bin} (vedi config/paths.yaml)")
+        if not self.script.exists():
+            raise FileNotFoundError(f"Script Slicer non trovato: {self.script}")
+
+    def run(self, patient) -> None:
+        patient_dir = str(patient.path.resolve())
+        # Pass patient dir as last argument (export_lumen.py legge sys.argv[-1])
+        cmd = [
+            self.slicer_bin,
+            "--no-splash",
+            "--python-script",
+            str(self.script),
+            "--",
+            patient_dir,
+        ]
+        print(f"[DEBUG] SlicerConversionAdapter.run: cmd={' '.join(cmd)}")
+        process = subprocess.Popen(
+            cmd,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            text=True,
+            bufsize=1,
+        )
+        assert process.stdout is not None
+        output_lines = []
+        for line in process.stdout:
+            output_lines.append(line)
+            print(f"[DEBUG][Slicer-conv] {line.rstrip()}")
+        process.wait()
+        output = "".join(output_lines)
+        print(f"[DEBUG] SlicerConversionAdapter.run: returncode={process.returncode}")
+
+        try:
+            log_path = Path(patient_dir) / "slicer_conversion.log"
+            with open(log_path, "w", encoding="utf-8") as fh:
+                fh.write(output)
+            print(f"[DEBUG] Wrote slicer conversion log to: {log_path}")
+        except Exception as e:
+            print(f"[DEBUG] Failed to write slicer conversion log: {e}")
+
+        if process.returncode != 0:
+            raise RuntimeError(
+                f"Errore durante l'esecuzione di Slicer conversion su {patient.id}: codice {process.returncode}\n{output}"
+            )
+
+    def validate(self, patient) -> dict[str, str]:
+        out = Path(patient.path) / self.output_filename
+        exists = out.exists()
+        status_report = {"conversion_exists": exists}
+        print(f"[DEBUG] SlicerConversionAdapter.validate: {status_report}")
+        artifacts: dict[str, str] = {}
+        if exists:
+            artifacts["lumen_tree"] = str(out)
+            return artifacts
+        raise FileNotFoundError(f"Artifact di conversione mancante: {out}")

@@ -4,7 +4,7 @@ from pathlib import Path
 
 from .base import Adapter
 from .paraview import ParaViewAdapter
-from .slicer import SlicerInteractiveAdapter
+from .slicer import SlicerInteractiveAdapter, SlicerConversionAdapter
 from .geometry import SvMatchAdapter
 
 # repo_root/steps  (stessa "risalita" che fa cli.py per config/)
@@ -47,6 +47,12 @@ def build_adapters(paths: dict, params: dict) -> dict[str, Adapter]:
             slicer_bin=paths.get("slicer", "Slicer"),
             script=STEPS_DIR / "slicer" / "extract_tree_and_extensions.py",
             extensions_length=params.get("extensions_length", 25.0)
+        ),
+        "start": SlicerConversionAdapter(
+            stage="start",
+            slicer_bin=paths.get("slicer", "Slicer"),
+            script=STEPS_DIR / "slicer" / "export_lumen.py",
+            output_filename="lumen_tree_cfd.vtk",
         ),
         "sv_match": SvMatchAdapter(
             stage="sv_match",

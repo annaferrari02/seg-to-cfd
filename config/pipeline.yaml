@@ -6,6 +6,7 @@
 #   action  : optional sub-action for multi-purpose adapters
 stages:
 #to implement: final.py all'inizio
+  - {name: start,         type: auto, adapter: slicer, action: convertion}
   - {name: slicer,        type: auto, adapter: slicer}
   - {name: paraview,      type: auto,  adapter: paraview,    action: transform}
   - {name: sv_extract,    type: auto,  adapter: simvascular, action: extract}
