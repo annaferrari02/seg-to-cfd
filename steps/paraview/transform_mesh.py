@@ -1,16 +1,8 @@
 # steps/paraview/transform_mesh.py
 # Uso:  pvpython steps/paraview/transform_mesh.py <input.vtk> <output.vtk> --scale 0.1
 #
-# Contratto con l'adapter (MONDO 1):
-#   - riceve input/output/scale da riga di comando (niente hardcoded);
-#   - esce con codice != 0 a ogni problema;
-#   - a fine corsa l'output DEVE esistere e non essere vuoto.
-#
-# MODIFICA (passo 1): l'output NON e' piu' scritto con SaveData (che su
-# ParaView 5.11+ produce "DataFile Version 5.1", con i poligoni come
-# OFFSETS+CONNECTIVITY che il VTK vecchio di SimVascular 2023-03-27 non sa
-# leggere -> polys=0 -> freeze in set_surface). Ora scriviamo in legacy VTK
-# 4.2, che usa il blocco POLYGONS classico leggibile da SV.
+# attenzione: usare sempre formato vtk per compatibilità con SimVascular. Il formato VTK 4.2 è il più compatibile.
+#NON usare SaveData perche produce file in formato VTK 5.0 (XML) che SimVascular non legge. usare vtkPolyDataWriter per scrivere in VTK 4.2.
 
 import argparse
 import os

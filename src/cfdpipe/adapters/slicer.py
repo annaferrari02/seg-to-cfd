@@ -100,7 +100,7 @@ class SlicerInteractiveAdapter(Adapter):
 
 
 class SlicerConversionAdapter(Adapter):
-    """Adapter minimale per eseguire un piccolo script Slicer che converte
+    """Adapter minimale per eseguire lo script Slicer che converte
     `Combined.seg.nrrd` -> `lumen_tree_cfd.vtk`.
     """
     def __init__(self, stage: str, slicer_bin: str, script: Path, output_filename: str = "lumen_tree_cfd.vtk"):

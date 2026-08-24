@@ -37,8 +37,8 @@ def build_adapters(paths: dict, params: dict) -> dict[str, Adapter]:
             stage="mesh_qc",
             pvpython=paths["pvpython"],
             script=STEPS_DIR / "paraview" / "quality_check.py",
-            input_filename="cfd{patient}/Meshes/{patient}/{patient}.vtu",
-            output_filename="cfd{patient}/Meshes/{patient}/{patient}_qc.vtu",
+            input_filename="cfd{patient}/Meshes/{patient}.vtu",
+            output_filename="cfd{patient}/Meshes/{patient}_qc.vtu",
             output_artifact_name="mesh_qc",
             extra_args=["--threshold", str(params.get("quality_threshold", 400))],
         ),
@@ -76,7 +76,7 @@ def build_adapters(paths: dict, params: dict) -> dict[str, Adapter]:
             script=STEPS_DIR / "simvascular" / "sv_meshing.py",
             input_filename="cfd{patient}/Models/{patient}.vtp",
             outputs={
-                "volume_mesh": "cfd{patient}/Meshes/{patient}/{patient}.vtu",
+                "volume_mesh": "cfd{patient}/Meshes/{patient}.vtu",
                 "mesh_info":   "mesh_info.json",
             },
             extra_args=[

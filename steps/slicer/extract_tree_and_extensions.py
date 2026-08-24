@@ -16,6 +16,7 @@ def parse_args():
     parser = argparse.ArgumentParser(description="Slicer Centerline and Flow Extension Pipeline")
     parser.add_argument("--patient-dir", required=True, help="Path completo alla cartella del paziente (es. database/pz001)")
     parser.add_argument("--flow-ext", type=float, default=25.0, help="Lunghezza flow extension in mm")
+    parser.add_argument("--clip-inset", type=float, default=2.0, help="Inset per il clipping (mm)")
     
     # Rimuove gli argomenti interni passati da Slicer all'avvio
     script_args = sys.argv[1:]
@@ -337,7 +338,12 @@ def run_slicer_pipeline(patient_dir, flow_ext_length):
         
         # Recupero dell'Enum per PLANE da ClipVesselLogic
         clipping_method = getattr(clip_logic, "CLIPPING_METHOD_PLANE", getattr(clip_logic, "PLANE", "Plane"))
-        ext_mode = getattr(clip_logic, "CENTERLINE_DIRECTION", getattr(clip_logic, "BOUNDARY_NORMAL", "BOUNDARY_NORMAL"))
+        ext_mode = getattr(clip_logic, "CENTERLINE_DIRECTION", getattr(clip_logic, "CENTERLINE_DIRECTION", "CENTERLINE_DIRECTION"))
+
+        if hasattr(clip_logic, "clipInset"):
+            clip_logic.clipInset = getattr(args, "clip_inset", 2.0)
+        elif hasattr(clip_logic, "setClipInset"):
+            clip_logic.setClipInset(getattr(args, "clip_inset", 2.0))
 
         cap_flow_polydata = clip_logic.clipVessel(
             surfacePolyData=surface_to_clip,

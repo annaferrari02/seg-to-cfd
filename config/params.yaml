@@ -20,17 +20,13 @@ max_geom_cm: 100            # paraview transform guard: fail if extent exceeds (
 clip-offset: 3.0        #quanto indietro andare nel cut vessel (evitare flow extensions improprie)
 # Simulation
 mpi_ranks: 16
-bl: False                  #boundary layer 
+bl: True                #boundary layer 
 gmes: 0.25                #global max edge size 
-portion_edge_size: 0.5    #si abbassa se troppo fine per meshing (decrease di 0.10 ogni tentativo)
-bl_num_layers: 2            #default
-bl_decreasing_ratio: 0.1 
+portion_edge_size: 0.20    #the portion of the edge size to use as the size for the initial boundary layer (typically this is a value between zero and one.
+                          # si abbassa se troppo fine per meshing (decrease di 0.10 ogni tentativo)
+bl_num_layers: 2            #default, it's the number of layers desired. Too many layers can cause self intersections on smaller vessels, so be careful.
+bl_decreasing_ratio: 0.60   # the amount of the size decrease between successive boundary layers. This gradation factor is multiplied by t
+                            #he previous layer to get the thickness of the new layer. In order to decrease the layers by a factor of 2, apply a decreasing ratio of 0.5.
 
 
-# How to launch each World-2 tool. Empty -> default to the current python (for stubs).
-# Production forms (fill on the workstation):
-#   slicer:        ["Slicer", "--python-script"]        # note: needs "--" before script args
-#   pvbatch:       ["pvbatch"]
-#   simvascular:   ["simvascular", "--python"]
-#   svmultiphysics:["nohup", "/usr/local/sv/.../bin/svmultiphysics"]
 launcher: {}
