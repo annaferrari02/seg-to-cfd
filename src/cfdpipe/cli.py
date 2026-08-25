@@ -61,16 +61,36 @@ def cmd_status(args) -> None:
         st = p.load_status()
         print(f"{p.id:<10} {st.stage:<12} {st.status:<16} {st.updated_at}")
 
+
+def _load_pipeline_and_adapters():
+    pipeline = load_pipeline(PIPELINE_CONFIG)
+    paths = load_paths(PATHS_CONFIG)
+    params = load_params(PARAMS_CONFIG)
+    adapters = build_adapters(paths, params)
+    return pipeline, adapters
+
+
+def cmd_sync(args) -> None:
+    try:
+        pipeline, adapters = _load_pipeline_and_adapters()
+    except (PipelineConfigError, ConfigError, KeyError) as e:
+        raise SystemExit(f"[sync] configurazione: {e}")
+
+    print(f"[DEBUG] pipeline stages: {pipeline.stage_names()}")
+    print(f"[DEBUG] adapters registered: {list(adapters.keys())}")
+    runs = orchestrator.sync(_database_root(), pipeline, adapters, only=args.patient)
+    if not runs:
+        print("nessun paziente da sincronizzare")
+        return
+    for r in runs:
+        print(f"\n{r.patient_id}: stage={r.stage} status={r.status}")
+        for s in r.steps:
+            print(f"   [{s.action}] {s.note}")
+
 def cmd_run(args) -> None:
     try:
-        pipeline = load_pipeline(PIPELINE_CONFIG)
-    except PipelineConfigError as e:
-        raise SystemExit(f"[run] pipeline: {e}")
-    try:
-        paths    = load_paths(PATHS_CONFIG)
-        params   = load_params(PARAMS_CONFIG)
-        adapters = build_adapters(paths, params)
-    except (ConfigError, KeyError) as e:
+        pipeline, adapters = _load_pipeline_and_adapters()
+    except (PipelineConfigError, ConfigError, KeyError) as e:
         raise SystemExit(f"[run] configurazione: {e}")
 
     print(f"[DEBUG] pipeline stages: {pipeline.stage_names()}")
@@ -78,6 +98,10 @@ def cmd_run(args) -> None:
     print(f"[DEBUG] running on database root: {_database_root()}")
     if args.patient:
         print(f"[DEBUG] limiting run to patient: {args.patient}")
+
+    # Prima del run, riallinea ledger e filesystem: se la GUI ha già prodotto
+    # i file dello stadio corrente, il ledger avanza senza rieseguire nulla.
+    orchestrator.sync(_database_root(), pipeline, adapters, only=args.patient)
 
     runs = orchestrator.run(_database_root(), pipeline, adapters, only=args.patient)
     if not runs:
@@ -100,6 +124,11 @@ def build_parser() -> argparse.ArgumentParser:
     p_status = sub.add_parser("status", help="mostra lo stato dei pz")
     p_status.add_argument("patient", nargs="?", default=None)
     p_status.set_defaults(func=cmd_status)
+
+    p_sync = sub.add_parser("sync", help="riallinea ledger e file presenti su disco")
+    p_sync.add_argument("patient", nargs="?", default=None,
+                        help="opzionale: un solo pz (utile per test)")
+    p_sync.set_defaults(func=cmd_sync)
 
     p_run = sub.add_parser("run", help="esegue la pipeline sui pz pending")
     p_run.add_argument("patient", nargs="?", default=None,

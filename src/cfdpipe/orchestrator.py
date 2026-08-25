@@ -157,6 +157,44 @@ def _execute(patient: Patient, stage: str, adapter: Adapter) -> Step:
     return Step(True, "executed", f"{stage}: eseguito")
 
 
+def _reconcile_step(patient: Patient, pipeline: Pipeline, adapters: dict[str, Adapter]) -> Step:
+    """Allinea il ledger allo stato effettivo dei file gia' presenti su disco.
+
+    Non esegue nessun adapter: usa solo ``validate`` per capire se lo stadio
+    corrente e' gia' completato fuori pipeline (es. da GUI o da un tool esterno).
+    Se e' completato, lo marca ``done`` e lascia che il ciclo passi allo stadio
+    successivo.
+    """
+    st = patient.load_status()
+    stage, status = st.stage, st.status
+    print(f"[DEBUG] _reconcile: patient={patient.id} stage={stage} status={status}")
+
+    if status == StageStatus.DONE.value:
+        nxt = pipeline.next_stage(stage)
+        if nxt is None:
+            return Step(False, "completed", f"pipeline completata (ultimo stadio: {stage})")
+        patient.set_stage(nxt, StageStatus.PENDING, message=f"avanzo da {stage} (sync)")
+        return Step(True, "advanced", f"{stage} -> {nxt}")
+
+    if status not in {StageStatus.PENDING.value, StageStatus.RUNNING.value, StageStatus.FAILED.value}:
+        print(f"[DEBUG] _reconcile: skipping patient={patient.id} stage={stage} status={status}")
+        return Step(False, "skipped", f"{stage}: {status} (non sincronizzabile)")
+
+    adapter = adapters.get(stage)
+    if adapter is None:
+        return Step(False, "skipped", f"{stage}: nessun adapter registrato (sync rimandato)")
+
+    try:
+        artifacts = adapter.validate(patient)
+    except Exception as exc:
+        print(f"[DEBUG] _reconcile: stage={stage} non ancora valido: {exc}")
+        return Step(False, "skipped", f"{stage}: artefatti non ancora completi")
+
+    patient.set_stage(stage, StageStatus.DONE,
+                      message="sincronizzato da filesystem", artifacts=artifacts)
+    return Step(True, "recovered", f"{stage}: riconosciuto da filesystem")
+
+
 # --------------------------------------------------------------------------- #
 # Il ciclo per-paziente: chaining + isolamento dei guasti.
 # --------------------------------------------------------------------------- #
@@ -212,6 +250,40 @@ def _process_patient(patient: Patient, pipeline: Pipeline,
     return PatientRun(patient.id, final.stage, final.status, steps)
 
 
+def _sync_patient(patient: Patient, pipeline: Pipeline,
+                  adapters: dict[str, Adapter]) -> PatientRun:
+    """Sincronizza un paziente con i file gia' presenti, senza rieseguire stadi.
+
+    Utile dopo correzioni manuali dalla GUI: se i file attesi dallo stadio
+    corrente esistono gia', il ledger avanza da solo fino al primo stadio che
+    manca davvero.
+    """
+    if not patient.has_status():
+        return PatientRun(patient.id, "-", "(no ledger)",
+                          [Step(False, "skipped",
+                                "nessun ledger: esegui prima 'cfdpipe init'")])
+
+    steps: list[Step] = []
+    for _ in range(MAX_STEPS):
+        try:
+            step = _reconcile_step(patient, pipeline, adapters)
+        except Exception as exc:
+            stage = _current_stage(patient)
+            _mark_failed(patient, stage, exc)
+            steps.append(Step(False, "failed",
+                              f"{stage}: {type(exc).__name__}: {exc}"))
+            break
+        steps.append(step)
+        if not step.cont:
+            break
+    else:
+        steps.append(Step(False, "skipped",
+                          f"raggiunto il limite di {MAX_STEPS} step (anti-loop)"))
+
+    final = patient.load_status()
+    return PatientRun(patient.id, final.stage, final.status, steps)
+
+
 # --------------------------------------------------------------------------- #
 # API pubblica.
 # --------------------------------------------------------------------------- #
@@ -227,3 +299,12 @@ def run(database_root: Path, pipeline: Pipeline,
     if only is not None:
         patients = [p for p in patients if p.id == only]
     return [_process_patient(p, pipeline, adapters) for p in patients]
+
+
+def sync(database_root: Path, pipeline: Pipeline,
+         adapters: dict[str, Adapter], only: str | None = None) -> list[PatientRun]:
+    """Allinea i ledger ai file gia' presenti sul disco e avanza quanto possibile."""
+    patients = Patient.discover(database_root)
+    if only is not None:
+        patients = [p for p in patients if p.id == only]
+    return [_sync_patient(p, pipeline, adapters) for p in patients]
