@@ -10,16 +10,6 @@ max_snap_dist_mm: 5.0       # tag_endpoints frame-mismatch guard
 
 # SimVascular / meshing
 separation_angle: 50
-# extract_faces : remesh di pulizia 
-remesh_hmin: 0.02
-remesh_hmax: 0.25
-remesh_hausd: 0.005
-
-quality_threshold: 400            # mesh_quality gate: fail if >= this
-max_geom_cm: 100            # paraview transform guard: fail if extent exceeds (mm not scaled)
-clip-offset: 3.0        #quanto indietro andare nel cut vessel (evitare flow extensions improprie)
-# Simulation
-mpi_ranks: 16
 bl: True                #boundary layer 
 gmes: 0.25                #global max edge size 
 portion_edge_size: 0.20    #the portion of the edge size to use as the size for the initial boundary layer (typically this is a value between zero and one.
@@ -28,5 +18,24 @@ bl_num_layers: 2            #default, it's the number of layers desired. Too man
 bl_decreasing_ratio: 0.60   # the amount of the size decrease between successive boundary layers. This gradation factor is multiplied by t
                             #he previous layer to get the thickness of the new layer. In order to decrease the layers by a factor of 2, apply a decreasing ratio of 0.5.
 
+# extract_faces : remesh di pulizia 
+remesh_hmin: 0.02
+remesh_hmax: 0.25
+remesh_hausd: 0.005
+
+quality_threshold: 400            # mesh_quality gate: fail if >= this
+max_geom_cm: 100            # paraview transform guard: fail if extent exceeds (mm not scaled)
+clip_inset: 10.0        # distanza lungo la centerline prima del taglio (mm)
+# Simulation
+mpi_ranks: 16
+
+map: 119989.8              
+tot_comp: 0.00097508288
+reference_inflow: config/inflow.reference
+timesteps: 960
+vtk_increment: 2
+period: 0.8
+area_to_cm2: 1.0
+res1_split: 0.15
 
 launcher: {}

@@ -37,8 +37,8 @@ def build_adapters(paths: dict, params: dict) -> dict[str, Adapter]:
             stage="mesh_qc",
             pvpython=paths["pvpython"],
             script=STEPS_DIR / "paraview" / "quality_check.py",
-            input_filename="cfd{patient}/Meshes/{patient}_surface.vtp",
-            output_filename="cfd{patient}/Meshes/{patient}_surface_qc.vtp",
+            input_filename="cfd{patient}/Meshes/{patient}.vtp",
+            output_filename="cfd{patient}/Meshes/{patient}.vtp",
             output_artifact_name="mesh_qc",
             extra_args=["--threshold", str(params.get("quality_threshold", 400))],
         ),
@@ -46,7 +46,8 @@ def build_adapters(paths: dict, params: dict) -> dict[str, Adapter]:
             stage="slicer",
             slicer_bin=paths.get("slicer", "Slicer"),
             script=STEPS_DIR / "slicer" / "extract_tree_and_extensions.py",
-            extensions_length=params.get("extensions_length", 25.0)
+            flow_ext_length=params.get("flow_ext_length", 25.0),
+            clip_inset=params.get("clip_inset", 2.0),
         ),
         "start": SlicerConversionAdapter(
             stage="start",
@@ -84,9 +85,28 @@ def build_adapters(paths: dict, params: dict) -> dict[str, Adapter]:
             "--bl", str(params.get("bl", True)).lower(),
             "--portion-edge-size", str(params.get("portion_edge_size", 0.5)),
             "--bl-num-layers", str(params.get("bl_num_layers", 2)),
-            "--bl-decreasing-ratio", str(params.get("bl_decreasing_ratio", 0.1)),
-        ]
-    ),
+            "--bl-decreasing-ratio", str(params.get("bl_decreasing_ratio", 0.1)),]
+        ),
+        "sim_setup": SimVascularAdapter(
+            stage="sim_setup",
+            simvascular=paths["simvascular"],
+            script=STEPS_DIR / "simvascular" / "sim_setup.py",
+            input_filename="cfd{patient}/Models/{patient}.vtp",
+            outputs={
+                "sjb": "cfd{patient}/Simulations/{patient}.sjb",
+                "rcr": "cfd{patient}/Simulations/{patient}/rcrparams.txt",
+                "inflow_scaled": "cfd{patient}/Simulations/{patient}/inflow.reference.scaled",},
+        extra_args=[
+            "--map",              str(params["map"]),
+            "--tot-comp",         str(params["tot_comp"]),
+            "--reference-inflow", str(STEPS_DIR.parent / params.get("reference_inflow", "config/inflow.reference")),
+            "--timesteps",        str(params.get("timesteps", 960)),
+            "--vtk-increment",    str(params.get("vtk_increment", 2)),
+            "--period",           str(params.get("period", 0.8)),
+            "--area-to-cm2",      str(params.get("area_to_cm2", 1.0)),
+            "--res1-split",       str(params.get("res1_split", 0.15)),
+        ],
+        )
     }
     
     if SimVascularAdapter is not None:

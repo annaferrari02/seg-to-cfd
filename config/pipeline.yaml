@@ -14,6 +14,7 @@ stages:
   - {name: sv_apply,      type: auto,  adapter: simvascular, action: apply}
   - {name: sv_meshing,       type: auto,  adapter: simvascular, action: mesher}
   - {name: mesh_qc,       type: gate,  adapter: paraview,    action: quality}
+  - {name: sim_setup,     type: auto,  adapter: simvascular, action: setup}
   - {name: simulation,    type: async, adapter: simvascular, action: simulate}
 
 

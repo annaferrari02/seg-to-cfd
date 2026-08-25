@@ -6,11 +6,12 @@ import subprocess
 from typing import Optional
 
 class SlicerInteractiveAdapter(Adapter):
-    def __init__(self, stage: str, slicer_bin: str, script: Path, extensions_length: float):
+    def __init__(self, stage: str, slicer_bin: str, script: Path, flow_ext_length: float, clip_inset: float):
         self.stage = stage
         self.slicer_bin = slicer_bin
         self.script = script
-        self.extensions_length = extensions_length
+        self.flow_ext_length = flow_ext_length
+        self.clip_inset = clip_inset
 
     def preconditions(self, patient) -> None:
         input_file = patient.path.resolve() / "lumen_tree_cfd.vtk"
@@ -31,7 +32,8 @@ class SlicerInteractiveAdapter(Adapter):
             "--python-script", str(self.script),
             "--",
             "--patient-dir", patient_dir,
-            "--flow-ext", str(self.extensions_length)
+            "--flow-ext", str(self.flow_ext_length),
+            "--clip-inset", str(self.clip_inset),
         ]
         print(f"[DEBUG] SlicerInteractiveAdapter.run: cmd={' '.join(cmd)}")
         process = subprocess.Popen(
@@ -124,6 +126,7 @@ class SlicerConversionAdapter(Adapter):
         # Pass patient dir as last argument (export_lumen.py legge sys.argv[-1])
         cmd = [
             self.slicer_bin,
+            "--no-main-window",
             "--no-splash",
             "--python-script",
             str(self.script),

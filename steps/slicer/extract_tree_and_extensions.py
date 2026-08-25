@@ -345,17 +345,23 @@ def run_slicer_pipeline(patient_dir, flow_ext_length):
         elif hasattr(clip_logic, "setClipInset"):
             clip_logic.setClipInset(getattr(args, "clip_inset", 2.0))
 
-        cap_flow_polydata = clip_logic.clipVessel(
+        clip_kwargs = dict(
             surfacePolyData=surface_to_clip,
             centerlinesNode=centerline_model_node,
             clipPointsMarkupsNode=fiducial_node,
-            clippingMethod=clipping_method,      # Nome corretto in ClipVessel.py
-            #clipInset=2.0,                       # Nome corretto in ClipVessel.py (invece di clipPointInset)
+            clippingMethod=clipping_method,
             cap=True,
             addFlowExtensions=True,
             extensionLength=flow_ext_length,
             extensionMode=ext_mode,
         )
+        try:
+            cap_flow_polydata = clip_logic.clipVessel(
+                **clip_kwargs,
+                clipInset=getattr(args, "clip_inset", 2.0),
+            )
+        except TypeError:
+            cap_flow_polydata = clip_logic.clipVessel(**clip_kwargs)
 
         # Check planarietà
         failures = getattr(clip_logic, "lastPlanarityFailures", None)

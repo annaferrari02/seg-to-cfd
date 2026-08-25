@@ -380,15 +380,13 @@ def build_mesher(model_vtp, wall_id, gmes, bl, portion, n_layers, ratio):
 
 
 def register_mesh_in_project_xml(project_dir, mesh_name):
-    """Registra la mesh in project_files.xml puntando alla superficie .vtp principale."""
+    """Registra la mesh in project_files.xml puntando al file .vtp in Meshes/."""
     proj_xml = os.path.join(project_dir, "project_files.xml")
     if not os.path.exists(proj_xml):
-        _log("project_files.xml non trovato in {}: la GUI potrebbe non mostrare la mesh.".format(
-            project_dir), "WARN")
+        _log("project_files.xml non trovato in {}: aggiornamento saltato.".format(project_dir), "WARN")
         return
     
-    # La GUI di SimVascular associa l'elemento visivo del Data Manager alla superficie exterior .vtp
-    mesh_rel_vtp = os.path.join("Meshes", mesh_name, "mesh-complete.exterior.vtp")
+    mesh_rel_vtp = os.path.join("Meshes", "{}.vtp".format(mesh_name))
     try:
         tree = ET.parse(proj_xml)
         root = tree.getroot()
@@ -410,84 +408,33 @@ def register_mesh_in_project_xml(project_dir, mesh_name):
         tree.write(proj_xml, encoding="utf-8", xml_declaration=True)
         _log("project_files.xml aggiornato per la mesh '{}' (file={}).".format(mesh_name, mesh_rel_vtp))
     except Exception as e:
-        _log("errore aggiornamento project_files.xml: {}".format(e), "WARN")
+        _log("Errore aggiornamento project_files.xml: {}".format(e), "WARN")
 
 
 def write_outputs(mesher, project_dir, mesh_name, out_dir, meta, faces_data=None):
-    """Crea la struttura di directory nativa attesa dalla GUI di SimVascular:
-       /Meshes/<mesh_name>/
-       ├── mesh-complete.vtu
-       ├── mesh-complete.exterior.vtp
-       └── mesh-surfaces/
-           ├── <face_name>.vtp
-           └── ...
+    """Salva i file della mesh nella root della cartella Meshes/
     """
     mesh_dir = os.path.join(project_dir, "Meshes")
-    target_mesh_dir = os.path.join(mesh_dir, mesh_name)
-    surfaces_dir = os.path.join(target_mesh_dir, "mesh-surfaces")
-    
-    os.makedirs(surfaces_dir, exist_ok=True)
+    os.makedirs(mesh_dir, exist_ok=True)
 
-    # 1. Scrittura mesh volumetrica nativa
-    vtu_out = os.path.join(target_mesh_dir, "mesh-complete.vtu")
-    mesher.write_mesh(vtu_out)
-    _log("scritto mesh di volume nativa: {}".format(vtu_out))
+    # File target direttamente dentro Meshes/
+    vtu_out = os.path.join(mesh_dir, "{}.vtu".format(mesh_name))
+    vtp_out = os.path.join(mesh_dir, "{}.vtp".format(mesh_name))
 
-    # 2. Estrazione e scrittura superficie esterna completa
-    surf = mesher.get_surface()
-    surf_out = os.path.join(target_mesh_dir, "mesh-complete.exterior.vtp")
-    w = vtk.vtkXMLPolyDataWriter()
-    w.SetFileName(surf_out)
-    w.SetInputData(surf)
-    w.Write()
-    _log("scritta superficie esterna nativa: {}".format(surf_out))
-
-    # 3. Estrazione facce singole per la cartella mesh-surfaces/
-    # Mappa ModelFaceID -> Nome Faccia (da faces_named.json se disponibile)
-    id_to_name = {}
-    if faces_data:
-        for fname, fid in faces_data.get("inlets", {}).items():
-            id_to_name[int(fid)] = fname
-        for fname, fid in faces_data.get("outlets", {}).items():
-            id_to_name[int(fid)] = fname
-        if "wall_id" in faces_data:
-            id_to_name[int(faces_data["wall_id"])] = "wall"
-
-    fid_arr = surf.GetCellData().GetArray("ModelFaceID")
-    if fid_arr is not None:
-        unique_ids = set(int(fid_arr.GetValue(i)) for i in range(fid_arr.GetNumberOfTuples()))
-        for fid in unique_ids:
-            fname = id_to_name.get(fid, "face_{}".format(fid))
-            face_vtp_path = os.path.join(surfaces_dir, "{}.vtp".format(fname))
-            
-            # Filtra le celle relative alla singola faccia
-            threshold = vtk.vtkThreshold()
-            threshold.SetInputData(surf)
-            threshold.SetInputArrayToProcess(0, 0, 0, vtk.vtkDataObject.FIELD_ASSOCIATION_CELLS, "ModelFaceID")
-            threshold.ThresholdBetween(fid, fid)
-            threshold.Update()
-
-            surf_filter = vtk.vtkGeometryFilter()
-            surf_filter.SetInputData(threshold.GetOutput())
-            surf_filter.Update()
-
-            fw = vtk.vtkXMLPolyDataWriter()
-            fw.SetFileName(face_vtp_path)
-            fw.SetInputData(surf_filter.GetOutput())
-            fw.Write()
-            _log("estratta e salvata faccia: {}".format(face_vtp_path))
-
-    # 4. Copie di fallback nella root di Meshes/ per retrocompatibilità script esterni
-    fallback_vtu = os.path.join(mesh_dir, "{}.vtu".format(mesh_name))
-    fallback_vtp = os.path.join(mesh_dir, "{}_surface.vtp".format(mesh_name))
-    
+    # 1. Scrittura mesh volumetrica (.vtu)
     fw_vtu = vtk.vtkXMLUnstructuredGridWriter()
-    fw_vtu.SetFileName(fallback_vtu)
+    fw_vtu.SetFileName(vtu_out)
     fw_vtu.SetInputData(mesher.get_mesh())
     fw_vtu.Write()
+    _log("Scritta mesh volumetrica: {}".format(vtu_out))
 
-    w.SetFileName(fallback_vtp)
+    # 2. Scrittura superficie esterna (.vtp)
+    surf = mesher.get_surface()
+    w = vtk.vtkXMLPolyDataWriter()
+    w.SetFileName(vtp_out)
+    w.SetInputData(surf)
     w.Write()
+    _log("Scritta superficie mesh: {}".format(vtp_out))
 
     # Metadata & Registrazione Progetto
     ug = mesher.get_mesh()
@@ -498,7 +445,6 @@ def write_outputs(mesher, project_dir, mesh_name, out_dir, meta, faces_data=None
 
     register_mesh_in_project_xml(project_dir, mesh_name)
     return vtu_out
-
 
 def main():
     args = parse_args()

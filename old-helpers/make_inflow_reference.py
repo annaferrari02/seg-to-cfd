@@ -2,6 +2,9 @@
 import sys
 import numpy as np
 
+if not hasattr(np, "trapz"):        # numpy>=2.0: np.trapz -> np.trapezoid
+    np.trapz = np.trapezoid
+
 
 def scale_waveform_to_1s_and_mean(in_path: str, out_path: str,
                                  target_duration: float = 0.8,

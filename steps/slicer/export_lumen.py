@@ -52,6 +52,7 @@ def process_patient(patient_dir):
 
     # Pulizia della scena Slicer
     slicer.mrmlScene.Clear(0)
+    slicer.app.exit(0)
 
 if __name__ == "__main__":
     # Eseguito via CLI: Slicer --no-main-window --python-script step0_export_lumen.py <patient_dir>
