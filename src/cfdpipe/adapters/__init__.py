@@ -81,11 +81,17 @@ def build_adapters(paths: dict, params: dict) -> dict[str, Adapter]:
                 "mesh_info":   "mesh_info.json",
             },
             extra_args=[
-            "--gmes", str(params.get("gmes", params.get("global_max_edge_size", 0.25))),
-            "--bl", str(params.get("bl", True)).lower(),
-            "--portion-edge-size", str(params.get("portion_edge_size", 0.5)),
-            "--bl-num-layers", str(params.get("bl_num_layers", 2)),
-            "--bl-decreasing-ratio", str(params.get("bl_decreasing_ratio", 0.1)),]
+                "--gmes", str(params.get("gmes", params.get("global_max_edge_size", 0.25))),
+                "--bl", str(params.get("bl", True)).lower(),
+                "--portion-edge-size", str(params.get("portion_edge_size", 0.2)),
+                "--bl-num-layers", str(params.get("bl_num_layers", 2)),
+                "--bl-decreasing-ratio", str(params.get("bl_decreasing_ratio", 0.6)),
+                "--remesh", str(params.get("remesh", False)).lower(),
+                "--remesh-hmin", str(params.get("remesh_hmin", max(0.01, float(params.get("gmes", params.get("global_max_edge_size", 0.25))) / 5.0))),
+                "--remesh-hmax", str(params.get("remesh_hmax", params.get("gmes", params.get("global_max_edge_size", 0.25)))),
+                "--remesh-hausd", str(params.get("remesh_hausd", 0.01)),
+                "--remesh-angle", str(params.get("remesh_angle", 50.0)),
+            ]
         ),
         "sim_setup": SimVascularAdapter(
             stage="sim_setup",

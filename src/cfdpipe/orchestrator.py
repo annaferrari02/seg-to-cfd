@@ -87,6 +87,12 @@ def _step(patient: Patient, pipeline: Pipeline, adapters: dict[str, Adapter]) ->
 
     # 1c) Se lo stadio era fallito, proviamo a recuperarlo automaticamente.
     if status == StageStatus.FAILED.value:
+        if stage == "paraview":
+            print(f"[DEBUG] _step: patient={patient.id} stage=paraview failed -> restart from slicer")
+            patient.set_stage("slicer", StageStatus.PENDING,
+                              message="paraview failed: restart from slicer")
+            return Step(True, "restarted", "paraview fallito -> slicer")
+
         stype = pipeline.stage_type(stage)
         adapter = adapters.get(stage)
         if adapter is not None:

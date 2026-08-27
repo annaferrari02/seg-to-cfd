@@ -158,6 +158,22 @@ def compute_inlet_from_top_slice(surface_polydata, offset=2.0):
     return list(center_of_mass.GetCenter())
 
 
+def smooth_surface_polydata(surface_polydata, iterations=60, pass_band=0.003):
+    """Smussa la superficie prima del clipping e della generazione delle flow extensions."""
+    smoother = vtk.vtkWindowedSincPolyDataFilter()
+    smoother.SetInputData(surface_polydata)
+    smoother.SetNumberOfIterations(iterations)
+    smoother.BoundarySmoothingOff()
+    smoother.FeatureEdgeSmoothingOff()
+    smoother.SetFeatureAngle(120.0)
+    smoother.SetPassBand(pass_band)
+    smoother.NonManifoldSmoothingOn()
+    smoother.NormalizeCoordinatesOn()
+    smoother.Update()
+
+    return smoother.GetOutput()
+
+
 def auto_detect_endpoints(logic, preprocessed_polydata, inlet_point, patient_id):
     """
     auto-detection degli endpoint della rete a partire dal centroide dell'inlet.
@@ -250,149 +266,148 @@ def run_slicer_pipeline(patient_dir, flow_ext_length):
 
     print(f"[{patient_id}] Completato: 1 Inlet + {len(outlet_positions)} Outlets identificati.", flush=True)
 
-    # --- 3. SALVATAGGIO AUTOMATICO ---
+    #save
     slicer.util.saveNode(fiducial_node, endpoints_json)
     print(f"[{patient_id}] Endpoints generati e salvati in: {endpoints_json}", flush=True)
 
-    # --- 4. ESTRAZIONE CENTERLINES ---
-    print(f"[{patient_id}] Calcolo Centerlines e applicazione Flow Extensions ({flow_ext_length} mm)...")
+    # puliuzia superficie + centerlines 
+    print(f"[{patient_id}] Preparazione superficie definitiva...", flush=True)
+    
+    cleaner = vtk.vtkCleanPolyData()
+    cleaner.SetInputData(original_surface)
+    cleaner.Update()
 
-    try:
-        from ExtractCenterline import ExtractCenterlineLogic
-        logic = ExtractCenterlineLogic()
+    tri = vtk.vtkTriangleFilter()
+    tri.PassLinesOff()
+    tri.PassVertsOff()
+    tri.SetInputConnection(cleaner.GetOutputPort())
+    tri.Update()
 
-        if hasattr(logic, 'preprocess'):
-            try:
-                surface_polydata = logic.preprocess(surface_polydata, 5000, 4.0, False)
-            except Exception as e:
-                print(f"[{patient_id}] Errore preprocess: {e}", flush=True)
+    filler = vtk.vtkFillHolesFilter()
+    filler.SetInputConnection(tri.GetOutputPort())
+    filler.SetHoleSize(100.0)
+    filler.Update()
 
-        print(f"[{patient_id}] Usando ExtractCenterlineLogic.extractCenterline", flush=True)
-        centerline_polydata, voronoi_diagram = logic.extractCenterline(
-            surfacePolyData=surface_polydata,
-            endPointsMarkupsNode=fiducial_node,
-            curveSamplingDistance=1.0,
-        )
+    # Superficie smoothed unica
+    smoothed_surface = smooth_surface_polydata(filler.GetOutput(), iterations=20, pass_band=0.01)
 
-        centerline_model_node = slicer.mrmlScene.AddNewNodeByClass("vtkMRMLModelNode", f"Centerline_{patient_id}")
-        centerline_model_node.SetAndObserveMesh(centerline_polydata)
+    normals = vtk.vtkPolyDataNormals()
+    normals.SetInputData(smoothed_surface)
+    normals.ComputePointNormalsOn()
+    normals.ComputeCellNormalsOn()
+    normals.ConsistencyOn()
+    normals.SplittingOff()
+    normals.Update()
+
+    surface_to_clip = normals.GetOutput()
+
+    # ORA estrae la centerline da surface_to_clip 
+    print(f"[{patient_id}] Usando ExtractCenterlineLogic.extractCenterline", flush=True)
+    centerline_polydata, voronoi_diagram = logic.extractCenterline(
+        surfacePolyData=surface_to_clip,
+        endPointsMarkupsNode=fiducial_node,
+        curveSamplingDistance=1.0,
+    )
+
+    centerline_model_node = slicer.mrmlScene.AddNewNodeByClass("vtkMRMLModelNode", f"Centerline_{patient_id}")
+    centerline_model_node.SetAndObserveMesh(centerline_polydata)
         
-        parent_transform = None
-        if hasattr(input_model_node, 'GetParentTransformNode'):
-            parent_transform = input_model_node.GetParentTransformNode()
-        if parent_transform is not None:
-            centerline_model_node.SetAndObserveTransformNodeID(parent_transform.GetID())
+    parent_transform = None
+    if hasattr(input_model_node, 'GetParentTransformNode'):
+        parent_transform = input_model_node.GetParentTransformNode()
+    if parent_transform is not None:
+        centerline_model_node.SetAndObserveTransformNodeID(parent_transform.GetID())
         centerline_model_node.CreateDefaultDisplayNodes()
         centerline_model_node.GetDisplayNode().SetColor(1.0, 0.0, 0.0)
 
-        coordinate_system = infer_vtk_coordinate_system(input_vtk)
-        coordinate_system_name = slicer.vtkMRMLModelStorageNode().GetCoordinateSystemAsString(coordinate_system)
-        print(f"[{patient_id}] Coordinate system inferred: {coordinate_system_name}", flush=True)
+    coordinate_system = infer_vtk_coordinate_system(input_vtk)
+    coordinate_system_name = slicer.vtkMRMLModelStorageNode().GetCoordinateSystemAsString(coordinate_system)
+    print(f"[{patient_id}] Coordinate system inferred: {coordinate_system_name}", flush=True)
 
-        storage_node = slicer.vtkMRMLModelStorageNode()
-        storage_node.SetFileName(output_tree_vtk)
-        storage_node.SetCoordinateSystem(coordinate_system)
-        success = storage_node.WriteData(centerline_model_node)
-        if not success:
-            raise RuntimeError(f"[{patient_id}] Impossibile scrivere il modello centerline su {output_tree_vtk}")
+    storage_node = slicer.vtkMRMLModelStorageNode()
+    storage_node.SetFileName(output_tree_vtk)
+    storage_node.SetCoordinateSystem(coordinate_system)
+    success = storage_node.WriteData(centerline_model_node)
+    if not success:
+        raise RuntimeError(f"[{patient_id}] Impossibile scrivere il modello centerline su {output_tree_vtk}")
 
-        print(f"[{patient_id}] Modello finale salvato in: {output_tree_vtk}")
+    print(f"[{patient_id}] Modello finale salvato in: {output_tree_vtk}")
 
-        # --- 5. RIPRISTINO, CHIUSURA E CAPPING/FLOW EXTENSION ---
-        output_cap_vtk = os.path.join(patient_dir, "lumen_tree_cfd_cap.vtk")
-        print(f"[{patient_id}] Generazione modello cap+flow extension in: {output_cap_vtk}", flush=True)
+    # --- 5. RIPRISTINO, CHIUSURA E CAPPING/FLOW EXTENSION ---
+    output_cap_vtk = os.path.join(patient_dir, "lumen_tree_cfd_cap.vtk")
+    print(f"[{patient_id}] Generazione modello cap+flow extension in: {output_cap_vtk}", flush=True)
 
-        from ClipVessel import ClipVesselLogic
-        clip_logic = ClipVesselLogic()
 
-        cleaner = vtk.vtkCleanPolyData()
-        cleaner.SetInputData(original_surface)
-        cleaner.Update()
+    # FASE DI CLIPPING CON METODO PLANE ED INSET
+    print(f"[{patient_id}] Clip (Method: PLANE, ((((Inset: 2.0x todo yet))))) + flow extensions ({flow_ext_length} mm)...", flush=True)
 
-        tri = vtk.vtkTriangleFilter()
-        tri.PassLinesOff()
-        tri.PassVertsOff()
-        tri.SetInputConnection(cleaner.GetOutputPort())
-        tri.Update()
+    from ClipVessel import ClipVesselLogic
+    clip_logic = ClipVesselLogic()
 
-        # PASSAGGIO DI RIPRISTINO E CHIUSURA (FillHoles)
-        print(f"[{patient_id}] Chiusura e ripristino mesh primordiale...", flush=True)
-        filler = vtk.vtkFillHolesFilter()
-        filler.SetInputConnection(tri.GetOutputPort())
-        filler.SetHoleSize(100.0)
-        filler.Update()
+    if hasattr(clip_logic, "planarityTolerance"):
+        clip_logic.planarityTolerance = 0.2  #aumenta tolleranza per planarietà? 
 
-        # Ricalcolo Normali
-        normals = vtk.vtkPolyDataNormals()
-        normals.SetInputConnection(filler.GetOutputPort())
-        normals.ComputePointNormalsOn()
-        normals.ComputeCellNormalsOn()
-        normals.ConsistencyOn()
-        normals.SplittingOff()
-        normals.Update()
+    # Recupero dell'Enum per PLANE da ClipVesselLogic
+    clipping_method = getattr(clip_logic, "PLANE_PATCH", 
+                      getattr(clip_logic, "PLANE_PATCH", "PLANE_PATCH"))
+    ext_mode = getattr(clip_logic, "CENTERLINE_DIRECTION", getattr(clip_logic, "CENTERLINE_DIRECTION", "CENTERLINE_DIRECTION"))
 
-        surface_to_clip = normals.GetOutput()
+    if hasattr(clip_logic, "clipInset"):
+        clip_logic.clipInset = getattr(args, "clip_inset", 2.0)
+    elif hasattr(clip_logic, "setClipInset"):
+        clip_logic.setClipInset(getattr(args, "clip_inset", 2.0))
 
-        # FASE DI CLIPPING CON METODO PLANE ED INSET
-        print(f"[{patient_id}] Clip (Method: PLANE, ((((Inset: 2.0x todo yet))))) + flow extensions ({flow_ext_length} mm)...", flush=True)
-        
-        # Recupero dell'Enum per PLANE da ClipVesselLogic
-        clipping_method = getattr(clip_logic, "CLIPPING_METHOD_PLANE", getattr(clip_logic, "PLANE", "Plane"))
-        ext_mode = getattr(clip_logic, "CENTERLINE_DIRECTION", getattr(clip_logic, "CENTERLINE_DIRECTION", "CENTERLINE_DIRECTION"))
-
-        if hasattr(clip_logic, "clipInset"):
-            clip_logic.clipInset = getattr(args, "clip_inset", 2.0)
-        elif hasattr(clip_logic, "setClipInset"):
-            clip_logic.setClipInset(getattr(args, "clip_inset", 2.0))
-
-        clip_kwargs = dict(
-            surfacePolyData=surface_to_clip,
-            centerlinesNode=centerline_model_node,
-            clipPointsMarkupsNode=fiducial_node,
-            clippingMethod=clipping_method,
-            cap=True,
-            addFlowExtensions=True,
-            extensionLength=flow_ext_length,
-            extensionMode=ext_mode,
+    clip_kwargs = dict(
+        surfacePolyData=surface_to_clip,
+        centerlinesNode=centerline_model_node,
+        clipPointsMarkupsNode=fiducial_node,
+        clippingMethod=clipping_method,
+        cap=True,
+        addFlowExtensions=True,
+        extensionLength=flow_ext_length,
+        extensionMode=ext_mode,
+    )
+    try:
+        cap_flow_polydata = clip_logic.clipVessel(
+            **clip_kwargs,
+            clipInset=getattr(args, "clip_inset", 2.0),
         )
-        try:
-            cap_flow_polydata = clip_logic.clipVessel(
-                **clip_kwargs,
-                clipInset=getattr(args, "clip_inset", 2.0),
-            )
-        except TypeError:
-            cap_flow_polydata = clip_logic.clipVessel(**clip_kwargs)
+    except TypeError:
+        cap_flow_polydata = clip_logic.clipVessel(**clip_kwargs)
 
-        # Check planarietà
-        failures = getattr(clip_logic, "lastPlanarityFailures", None)
-        if failures:
-            labels = ", ".join(f["label"] for f in failures)
-            raise RuntimeError(f"[{patient_id}] Bordi non planari: cap+flow ext SALTATI da ClipVessel: {labels}")
+    # Check planarietà
+    failures = getattr(clip_logic, "lastPlanarityFailures", None)
+    if failures:
+        labels = ", ".join(f["label"] for f in failures)
+        print("Unclipped:", clip_logic.lastUnclippedPoints)
+        for r in clip_logic.lastPlanarityResults:
+            print(r["label"], r["maximumErrorMm"], r.get("reason"))
+        raise RuntimeError(f"[{patient_id}] Bordi non planari: cap+flow ext SALTATI da ClipVessel: {labels}")
 
-        # Check chiusura mesh finale
-        n_open_after = len(extract_boundary_endpoints(cap_flow_polydata))
-        if n_open_after != 0:
-            raise RuntimeError(f"[{patient_id}] Modello finale con {n_open_after} bordi aperti: capping non riuscito.")
-        
-        cap_model_node = slicer.mrmlScene.AddNewNodeByClass("vtkMRMLModelNode", f"CapSurface_{patient_id}")
-        cap_model_node.SetAndObserveMesh(cap_flow_polydata)
-        if parent_transform is not None:
-            cap_model_node.SetAndObserveTransformNodeID(parent_transform.GetID())
-        cap_model_node.CreateDefaultDisplayNodes()
-        cap_model_node.GetDisplayNode().SetColor(0.0, 0.0, 1.0)
+    
 
-        cap_storage_node = slicer.vtkMRMLModelStorageNode()
-        cap_storage_node.SetFileName(output_cap_vtk)
-        cap_storage_node.SetCoordinateSystem(coordinate_system)
-        success = cap_storage_node.WriteData(cap_model_node)
-        if not success:
-            raise RuntimeError(f"[{patient_id}] Impossibile scrivere il modello cap+flow extension su {output_cap_vtk}")
+    # Check chiusura mesh finale
+    n_open_after = len(extract_boundary_endpoints(cap_flow_polydata))
+    if n_open_after != 0:
+        raise RuntimeError(f"[{patient_id}] Modello finale con {n_open_after} bordi aperti: capping non riuscito.")
+    
+    cap_model_node = slicer.mrmlScene.AddNewNodeByClass("vtkMRMLModelNode", f"CapSurface_{patient_id}")
+    cap_model_node.SetAndObserveMesh(cap_flow_polydata)
+    if parent_transform is not None:
+        cap_model_node.SetAndObserveTransformNodeID(parent_transform.GetID())
+    cap_model_node.CreateDefaultDisplayNodes()
+    cap_model_node.GetDisplayNode().SetColor(0.0, 0.0, 1.0)
 
-        print(f"[{patient_id}] Modello cap+flow extension salvato in: {output_cap_vtk}")
+    cap_storage_node = slicer.vtkMRMLModelStorageNode()
+    cap_storage_node.SetFileName(output_cap_vtk)
+    cap_storage_node.SetCoordinateSystem(coordinate_system)
+    success = cap_storage_node.WriteData(cap_model_node)
+    if not success:
+        raise RuntimeError(f"[{patient_id}] Impossibile scrivere il modello cap+flow extension su {output_cap_vtk}")
 
-    except ImportError:
-        print("ERRORE: Modulo SlicerExtension-VMTK non trovato in 3D Slicer.")
-        sys.exit(1)
+    print(f"[{patient_id}] Modello cap+flow extension salvato in: {output_cap_vtk}")
+
+
 
 
 if __name__ == "__main__":

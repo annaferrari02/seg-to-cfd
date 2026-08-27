@@ -369,6 +369,15 @@ def build_mesher(model_vtp, wall_id, gmes, bl, portion, n_layers, ratio):
     opt = sv.meshing.TetGenOptions(
         global_edge_size=gmes, surface_mesh_flag=True, volume_mesh_flag=True
     )
+    # CRITICO: disattiva MMG. Con MMG attivo la superficie viene ricampionata e
+    # coarsen-ata (97k->17k tri) rompendosi (free/non-manifold edges) e perde
+    # ModelFaceID. use_mmg=False -> remesh via VMTK: superficie preservata +
+    # ModelFaceID stabile. Replica l'esito GUI riuscito (dove MMG era fallito).
+    if hasattr(opt, "use_mmg"):
+        opt.use_mmg = False
+        _log("TetGenOptions.use_mmg = False (path VMTK, ModelFaceID-safe).")
+    else:
+        _log("TetGenOptions privo di 'use_mmg' in questa build: API da verificare.", "WARN")
     if bl:
         mesher.set_boundary_layer_options(
             number_of_layers=n_layers,
