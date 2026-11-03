@@ -1,0 +1,106 @@
+{
+  "segments": {
+    "1": "cisx", "2": "cidx", "3": "iedx", "4": "iesx", "5": "ardx", "6": "arsx",
+    "7": "sma", "8": "ca", "9": "lumen", "10": "iidx", "11": "iisx"
+  },
+
+  "step0": {    "hu_check": {
+      "segment": "lumen",
+      "mean_hu_range": [
+        100,
+        800
+      ]
+    },
+    "filters": [
+      {"op": "remove_above", "segments": "all", "hu_max": 400,
+       "adaptive": {"ref": "lumen", "k": 3}, "max_frac": 0.2},
+      {"op": "smoothing", "segments": "lumen", "method": "MORPHOLOGICAL_CLOSING", "size_mm": 5.0},
+      {"op": "smoothing", "segments":"lumen", "method": "GAUSSIAN", "size_mm": 1.00},
+      {"op": "margin", "segments": ["ardx", "arsx", "sma", "iisx", "iidx", "lumen"], "size_mm": 1.0},
+      {"op": "smoothing", "segments": "all", "method": "MEDIAN", "size_mm": 1.0},
+      {"op": "smoothing", "segments": "all", "method": "MORPHOLOGICAL_CLOSING", "size_mm": 2.0},
+      {"op": "smoothing", "segments": "all", "method": "MORPHOLOGICAL_OPENING", "size_mm": 2.0},
+      {"op": "merge", "segments": "all", "name": "tree"},
+      {"op": "smoothing", "segments": ["tree"], "method": "MEDIAN", "size_mm": 2.0}
+    ]
+  },
+
+    "step1": {
+    "source_segment": "tree",
+    "surface_smoothing": 0.5,
+    "inlet_segment": "lumen",
+    "outlet_segments": [
+      "ardx",
+      "arsx",
+      "sma",
+      "ca",
+      "iedx",
+      "iesx",
+      "iidx",
+      "iisx"
+    ],
+    "max_label_dist_mm": {
+      "default": 5,
+      "lumen": 20
+    },
+    "centerline": {
+      "preprocess": true,
+      "decimation": 4,
+      "target_kpoints": 100,
+      "sampling_distance": 1
+    }
+  },
+  "step2": {
+    "inset": {
+      "factor": 1,
+      "min_mm": 2,
+      "max_branch_fraction": 0.3,
+      "share_tol_mm": 1
+    },
+    "flow_ext": {
+      "mode": "mm",
+      "value": 25,
+      "direction": "CENTERLINE_DIRECTION"
+    },
+    "cap_match_max_mm": 10
+  },
+  "step3": {
+    "scale": 0.1,
+    "extent_cm": [
+      5,
+      100
+    ],
+    "ascii": true
+  },
+  "step4": {
+    "sv_version": "2025-20-12",
+    "frame_margin_mm": 20.0
+  },
+    "step5": {
+    "gmes": 0.15,
+    "face_min_area_ratio": 0.6,
+    "boundary_layer": {
+      "on": true,
+      "layers": 2,
+      "portions": [0.5, 0.4, 0.3, 0.2],
+      "decreasing_ratio": 0.8,
+      "constant_thickness": false
+    }
+  },
+    "step6": {
+    "config": "les",
+    "map": 119989.8,
+    "tot_comp": 0.00097508288,
+    "res1_split": 0.15,
+    "ir_sc": 0.343,
+    "renal_rp": null,
+    "dp_max": null,
+    "period": 0.8,
+    "distal_pressure": 0.0,
+    "cycles": 3,
+    "save_cycles": 1,
+    "template": "sim_templates/solver_template.xml",
+    "inflow": "sim_templates/inflow_3d.flow",
+    "pbs_template": "sim_templates/run_pbs.template"
+  }
+}

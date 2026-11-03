@@ -1,0 +1,33 @@
+#!/bin/bash
+### Job name
+#PBS -N {case}
+### Output files
+#PBS -o run.out
+#PBS -e run.err
+### Queue name
+#PBS -q mathCPUQ
+####PBS -l walltime=300:00:0
+#PBS -l select=1:ncpus=72:mpiprocs=72:mem=60gb
+#PBS -M anna.ferrari-3@studenti.unitn.it
+#PBS -m abe
+module purge
+module load VTK/9.3.0-foss-2023a
+
+echo Working directory is $PBS_O_WORKDIR
+cd $PBS_O_WORKDIR
+
+echo INIT PBS_NODEFILE
+
+cat $PBS_NODEFILE
+
+echo DONE PBS_NODEFILE
+
+# Run N ranks (PBS sets PBS_NP, otherwise count nodefile)
+NP=${PBS_NP:-$(wc -l < "$PBS_NODEFILE")}
+
+nOMP=1
+
+SV=/home/anna.ferrari-3/build/svMultiPhysics-build/bin/svmultiphysics
+mpiexec --mca pml ob1 --mca btl self,vader \
+        -x OMP_NUM_THREADS=1 --hostfile $PBS_NODEFILE -n $NP \
+        $SV solver.xml

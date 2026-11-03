@@ -1,0 +1,11 @@
+step0: 
+
+step1: 
+
+step2: /home/trentodoc/APPS/Slicer-5.12.3-linux-amd64/Slicer --python-script /home/trentodoc/ASUIT_Projects/seg-to-cfd/step2_cap_flow_ext.py pz088
+
+step3: /home/trentodoc/APPS/ParaView-6.2.0-RC1-MPI-Linux-Python3.12-x86_64/bin/pvpython /home/trentodoc/ASUIT_Projects/seg-to-cfd/step3_transform.py pz088
+
+step4: /home/trentodoc/APPS/sv-compat/simvascular --python -- /home/trentodoc/ASUIT_Projects/seg-to-cfd/step4_sv_project.py pz088
+
+intersection point pz088 0,104882,0,126886,0,651314
